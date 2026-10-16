@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Life Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ── RESET & ROOT ─────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --blue:#1a56db;--blue-dk:#1e429f;--blue-lt:#dbeafe;
+  --green:#057a55;--green-dk:#046c4e;--green-lt:#d1fae5;
+  --orange:#d97706;--orange-lt:#fef3c7;
+  --red:#e02424;--red-lt:#fee2e2;
+  --purple:#7e3af2;--purple-dk:#5521b5;--purple-lt:#ede9fe;
+  --teal:#0694a2;--teal-lt:#cffafe;
+  --g50:#f9fafb;--g100:#f3f4f6;--g200:#e5e7eb;
+  --g300:#d1d5db;--g400:#9ca3af;--g500:#6b7280;
+  --g700:#374151;--g900:#111827;--white:#fff;
+  --r:10px;--rsm:7px;--rxs:5px;
+  --sh:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
+  --shm:0 4px 12px rgba(0,0,0,.09),0 2px 4px rgba(0,0,0,.05);
+  --shl:0 8px 24px rgba(0,0,0,.11),0 4px 8px rgba(0,0,0,.05);
+}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--g100);color:var(--g900);min-height:100vh;padding:12px;font-size:13px}
+
+/* ── SKELETON ─────────────────────────────────────────── */
+@keyframes shimmer{0%{background-position:-468px 0}100%{background-position:468px 0}}
+.skel{background:linear-gradient(90deg,var(--g200) 25%,var(--g100) 50%,var(--g200) 75%);background-size:936px 100%;animation:shimmer 1.2s ease-in-out infinite;border-radius:5px;}
+.skel-text{height:12px;margin-bottom:6px}.skel-val{height:28px;width:60px;margin:4px auto}.skel-bar{height:9px;margin-bottom:6px}.skel-chart{height:90px}
+
+/* ── TOPBAR ───────────────────────────────────────────── */
+.topbar{display:flex;align-items:center;justify-content:space-between;background:var(--white);border-radius:var(--r);padding:10px 18px;margin-bottom:12px;box-shadow:var(--sh);}
+.topbar-logo{display:flex;align-items:center;gap:8px}
+.topbar-logo-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--blue-dk),var(--blue));display:flex;align-items:center;justify-content:center;font-size:15px;}
+.topbar-title{font-size:15px;font-weight:800;letter-spacing:-.3px}
+.topbar-title span{color:var(--blue)}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.chip{font-family:'Space Mono',monospace;font-size:10px;background:var(--g100);border:1px solid var(--g200);padding:3px 9px;border-radius:20px;color:var(--g500);}
+.chip.ok{background:var(--green-lt);border-color:var(--green);color:var(--green)}
+.chip.err{background:var(--red-lt);border-color:var(--red);color:var(--red)}
+.btn{border:none;border-radius:20px;padding:5px 14px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;display:flex;align-items:center;gap:5px;transition:.2s;}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:var(--blue-dk);transform:translateY(-1px)}
+.btn-primary:active{transform:translateY(0)}
+.btn-primary.loading{opacity:.65;pointer-events:none}
+@keyframes spin{to{transform:rotate(360deg)}}.spin{animation:spin .7s linear infinite;display:inline-block}
+
+/* ── TAB NAV ──────────────────────────────────────────── */
+.tab-nav{display:flex;gap:6px;background:var(--white);border-radius:var(--r);padding:8px 14px;margin-bottom:12px;box-shadow:var(--sh);flex-wrap:wrap;}
+.tab-btn{border:none;border-radius:20px;padding:7px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;display:flex;align-items:center;gap:6px;transition:all .22s;background:var(--g100);color:var(--g500);border:1.5px solid transparent;}
+.tab-btn:hover{background:var(--g200);color:var(--g700)}
+.tab-btn.active-tab{background:var(--blue);color:#fff;box-shadow:0 2px 10px rgba(26,86,219,.25);}
+.tab-btn.active-tab.green-tab{background:var(--green);box-shadow:0 2px 10px rgba(5,122,85,.25);}
+.tab-sep{width:1px;background:var(--g200);margin:2px 4px;align-self:stretch}
+
+/* ── TAB CONTENT ──────────────────────────────────────── */
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* ── GRID ─────────────────────────────────────────────── */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+
+/* ── PANEL ────────────────────────────────────────────── */
+.panel{background:var(--white);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden;display:flex;flex-direction:column}
+.ph{padding:13px 16px 11px;display:flex;align-items:flex-start;gap:10px}
+.ph-icon{width:32px;height:32px;border-radius:var(--rsm);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.ph-text h2{font-size:13px;font-weight:800;letter-spacing:-.2px;line-height:1.2}
+.ph-text p{font-size:10.5px;margin-top:1px;opacity:.78}
+.pb{padding:0 15px 14px;flex:1;display:flex;flex-direction:column;gap:13px}
+.panel-a .ph{background:linear-gradient(135deg,#1e429f,#1a56db);color:#fff}
+.panel-a .ph-icon{background:rgba(255,255,255,.18)}
+.panel-w .ph{background:linear-gradient(135deg,#046c4e,#057a55);color:#fff}
+.panel-w .ph-icon{background:rgba(255,255,255,.18)}
+.panel-b .ph{background:linear-gradient(135deg,#5521b5,#7e3af2);color:#fff}
+.panel-b .ph-icon{background:rgba(255,255,255,.18)}
+.panel-n .ph{background:linear-gradient(135deg,#92400e,#d97706);color:#fff}
+.panel-n .ph-icon{background:rgba(255,255,255,.18)}
+
+/* ── STAT ROW ─────────────────────────────────────────── */
+.stat-row{display:flex;gap:6px;margin-top:4px}
+.sc{flex:1;background:var(--g50);border:1.5px solid var(--g200);border-radius:var(--rsm);padding:9px 7px 7px;text-align:center;}
+.sc .lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--g500);line-height:1;margin-bottom:5px}
+.sc .val{font-size:20px;font-weight:800;font-family:'Space Mono',monospace;letter-spacing:-1px;line-height:1}
+.sc .ico{font-size:12px;margin-bottom:2px}
+.sc.hi{background:var(--blue);border-color:var(--blue)}
+.sc.hi .lbl,.sc.hi .val{color:#fff}.sc.hi .lbl{opacity:.82}
+.c-b{color:var(--blue)}.c-g{color:var(--green)}.c-o{color:var(--orange)}.c-r{color:var(--red)}.c-p{color:var(--purple)}.c-t{color:var(--teal)}
+
+/* ── SECTION TITLE ────────────────────────────────────── */
+.stitle{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--blue);margin-bottom:7px}
+.stitle.g{color:var(--green)}.stitle.p{color:var(--purple)}.stitle.o{color:var(--orange)}
+
+/* ── MK BARS ──────────────────────────────────────────── */
+.mk-list{display:flex;flex-direction:column;gap:5px}
+.mk-row{display:flex;align-items:center;gap:7px}
+.mk-name{font-size:10.5px;font-weight:500;color:var(--g700);width:125px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mk-track{flex:1;height:7px;background:var(--g100);border-radius:20px;overflow:hidden}
+.mk-fill{height:100%;background:linear-gradient(90deg,var(--blue-dk),var(--blue));border-radius:20px;transition:width .6s ease}
+.mk-cnt{font-size:10.5px;font-weight:700;font-family:'Space Mono',monospace;color:var(--g700);width:14px;text-align:right}
+
+/* ── DONUT ────────────────────────────────────────────── */
+.donut-wrap{display:flex;align-items:center;gap:12px}
+.donut-box{position:relative;width:105px;height:105px;flex-shrink:0}
+.donut-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.donut-val{font-size:16px;font-weight:800;font-family:'Space Mono',monospace}
+.donut-sub{font-size:8.5px;color:var(--g400);font-weight:600;margin-top:1px}
+.legend-list{flex:1;display:flex;flex-direction:column;gap:5px}
+.li{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--g700)}
+.ld{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+/* ── CALENDAR ─────────────────────────────────────────── */
+.cal-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.cal-month{font-size:12px;font-weight:800}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.ch{font-size:9px;font-weight:700;text-align:center;color:var(--g400);padding:3px 0;text-transform:uppercase}
+.cd{font-size:10px;text-align:center;padding:3px 1px;border-radius:4px;color:var(--g400);min-height:30px;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1;}
+.cd-n{font-weight:500}
+.cd.today{background:var(--blue-lt);color:var(--blue);font-weight:800}
+.cd.has-dl{cursor:pointer}.cd.has-dl:hover{background:var(--g100)}
+.cb{font-size:8px;padding:1px 3px;border-radius:3px;font-weight:700;width:100%;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cb-r{background:var(--red-lt);color:var(--red)}.cb-o{background:var(--orange-lt);color:var(--orange)}
+.cal-leg{display:flex;gap:10px;margin-top:7px}
+.cll{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--g400)}
+.cld{width:8px;height:8px;border-radius:2px}
+
+/* ── WEEKEND ──────────────────────────────────────────── */
+.wstat-row{display:flex;gap:7px}
+.wsc{flex:1;background:var(--g50);border:1.5px solid var(--g200);border-radius:var(--rsm);padding:9px 8px;text-align:center}
+.wsc.fav{background:var(--green-lt);border-color:var(--green);flex:1.4}
+.wsc .wv{font-size:19px;font-weight:800;font-family:'Space Mono',monospace;color:var(--g900);line-height:1.1}
+.wsc .wl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--g500);margin-top:2px}
+.fav-ico{font-size:18px}.fav-nm{font-size:12px;font-weight:800;color:var(--green);margin-top:1px}
+.hb-list{display:flex;flex-direction:column;gap:5.5px}
+.hb-row{display:flex;align-items:center;gap:7px}
+.hb-lbl{font-size:10px;color:var(--g700);font-weight:500;width:118px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb-track{flex:1;height:9px;background:var(--g100);border-radius:20px;overflow:hidden}
+.hb-fill{height:100%;border-radius:20px;transition:width .7s ease}
+.hb-val{font-size:10px;font-weight:700;font-family:'Space Mono',monospace;color:var(--g700);width:30px;text-align:right}
+
+/* ── BALANCE ──────────────────────────────────────────── */
+.bstat-row{display:flex;gap:7px}
+.bsc{flex:1;text-align:center;background:var(--g50);border:1.5px solid var(--g200);border-radius:var(--rsm);padding:9px 5px 8px;}
+.bsc .bi{font-size:15px;margin-bottom:3px}
+.bsc .bl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--g500)}
+.bsc .bs{font-size:8.5px;color:var(--g400)}
+.bsc .bv{font-size:18px;font-weight:800;font-family:'Space Mono',monospace;line-height:1.1;margin-top:4px}
+
+/* ── INSIGHT ──────────────────────────────────────────── */
+.ig{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ib{background:var(--g50);border-radius:var(--rsm);padding:9px 10px;border:1.5px solid var(--g200)}
+.ib h4{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;color:var(--g700)}
+.ii{display:flex;align-items:flex-start;gap:5px;font-size:10px;color:var(--g500);margin-bottom:4px;line-height:1.35}
+.ii .ic{font-size:10.5px;flex-shrink:0;margin-top:.5px}
+.wsm{background:var(--purple-lt);border-radius:var(--rsm);padding:9px 11px;border:1.5px solid #c4b5fd}
+.wsm h4{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--purple);margin-bottom:7px}
+.wsm-items{display:flex;flex-wrap:wrap;gap:6px}
+.wi{display:flex;flex-direction:column;align-items:center;background:white;border-radius:var(--rxs);padding:5px 8px;min-width:50px;gap:1px}
+.wi .wii{font-size:13px}.wi .wiv{font-size:10.5px;font-weight:800;font-family:'Space Mono',monospace;color:var(--g900)}.wi .wil{font-size:8.5px;color:var(--g400);font-weight:600}
+.note{background:var(--green-lt);border-radius:var(--rxs);padding:7px 10px;display:flex;gap:6px;align-items:flex-start;font-size:10px;color:var(--green);line-height:1.4}
+
+/* ── NOTIFIKASI ───────────────────────────────────────── */
+.notif-input{width:100%;padding:8px 11px;border:1.5px solid var(--g200);border-radius:var(--rsm);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;color:var(--g900);background:var(--g50);transition:border-color .2s;}
+.notif-input:focus{border-color:var(--orange)}
+.notif-select{width:100%;padding:8px 11px;border:1.5px solid var(--g200);border-radius:var(--rsm);font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;color:var(--g900);background:var(--g50);cursor:pointer;transition:border-color .2s;}
+.notif-select:focus{border-color:var(--orange)}
+.notif-form-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+.notif-form-col{display:flex;flex-direction:column;gap:5px}
+.notif-actions{display:flex;gap:8px;flex-wrap:wrap}
+.n-alert{padding:9px 13px;border-radius:var(--rsm);font-size:11.5px;font-weight:600;display:none}
+.n-alert.ok{background:var(--green-lt);border:1.5px solid var(--green);color:var(--green)}
+.n-alert.err{background:var(--red-lt);border:1.5px solid var(--red);color:var(--red)}
+.n-alert.info{background:var(--blue-lt);border:1.5px solid var(--blue);color:var(--blue)}
+.notif-status-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 11px;background:var(--g50);border:1.5px solid var(--g200);border-radius:var(--rsm)}
+.notif-status-dot{width:10px;height:10px;border-radius:50%;background:var(--g300);flex-shrink:0;transition:background .3s}
+.notif-status-dot.active{background:var(--green)}
+.notif-status-text{font-size:11.5px;font-weight:700;color:var(--g700);flex:1}
+.n-dl-table{width:100%;border-collapse:collapse;font-size:11.5px}
+.n-dl-table th{background:var(--g50);padding:7px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--g500);border-bottom:1.5px solid var(--g200)}
+.n-dl-table td{padding:8px 10px;border-bottom:1px solid var(--g100);color:var(--g700)}
+.n-dl-table tr:last-child td{border-bottom:none}
+.n-dl-table tr:hover td{background:var(--g50)}
+.badge-urgent{background:var(--red-lt);color:var(--red);padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700}
+.badge-soon{background:var(--orange-lt);color:var(--orange);padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700}
+.badge-ok{background:var(--blue-lt);color:var(--blue);padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700}
+.notif-info{background:var(--orange-lt);border:1.5px solid #fcd34d;border-radius:var(--rsm);padding:10px 13px;font-size:11px;color:#92400e;line-height:1.7}
+.notif-info strong{font-weight:800}
+.notif-check-label{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--g700);cursor:pointer;white-space:nowrap}
+.notif-check-label input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--orange)}
+.notif-preview{margin-top:2px}
+.notif-preview-wrap{border:1.5px solid var(--g200);border-radius:var(--rsm);overflow:hidden}
+
+/* ── GAMIFICATION ─────────────────────────────────────── */
+.gamif-section{margin-top:1px}
+.level-card{background:linear-gradient(135deg,#ede9fe,#f5f3ff);border:1.5px solid #c4b5fd;border-radius:var(--rsm);padding:12px 14px;position:relative;overflow:hidden}
+.level-card::before{content:'';position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(126,58,242,.08)}
+.level-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.level-badge{display:flex;align-items:center;gap:8px}
+.level-badge-icon{font-size:26px;line-height:1}
+.level-info h4{font-size:14px;font-weight:800;color:var(--purple)}
+.level-info span{font-size:10px;color:#7c5fc9;font-weight:600}
+.level-num{font-family:'Space Mono',monospace;font-size:28px;font-weight:700;color:var(--purple);line-height:1;text-align:right}
+.level-num-lbl{font-size:9px;color:#7c5fc9;font-weight:700;text-transform:uppercase;letter-spacing:.5px;text-align:right;margin-top:1px}
+.xp-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.xp-lbl{font-size:10px;font-weight:700;color:#7c5fc9}
+.xp-val{font-size:10px;font-weight:700;font-family:'Space Mono',monospace;color:var(--purple)}
+.xp-track{height:10px;background:#ddd6fe;border-radius:20px;overflow:hidden;position:relative}
+.xp-fill{height:100%;background:linear-gradient(90deg,#7e3af2,#a78bfa);border-radius:20px;transition:width 1.2s cubic-bezier(.34,1.56,.64,1)}
+.xp-fill::after{content:'';position:absolute;top:2px;left:8px;right:8px;height:3px;background:rgba(255,255,255,.35);border-radius:20px}
+.xp-next{font-size:9.5px;color:#a78bfa;margin-top:4px;text-align:right}
+.streak-row{display:flex;gap:7px}
+.streak-box{flex:1;background:linear-gradient(135deg,#fef3c7,#fffbeb);border:1.5px solid #fcd34d;border-radius:var(--rsm);padding:9px 10px;text-align:center}
+.streak-val{font-size:22px;font-weight:800;font-family:'Space Mono',monospace;color:#b45309;line-height:1}
+.streak-ico{font-size:18px;margin-bottom:1px}
+.streak-lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#92400e;margin-top:2px}
+.stat-mini{flex:1;background:var(--g50);border:1.5px solid var(--g200);border-radius:var(--rsm);padding:9px 10px;text-align:center}
+.stat-mini .sv{font-size:20px;font-weight:800;font-family:'Space Mono',monospace;color:var(--g900);line-height:1}
+.stat-mini .sl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--g500);margin-top:3px}
+.days-lbl,.mission-lbl,.ach-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px}
+.days-lbl{color:var(--green)}.mission-lbl{color:var(--blue)}.ach-lbl{color:var(--orange)}
+.days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.day-item{display:flex;flex-direction:column;align-items:center;gap:2px}
+.day-name{font-size:8.5px;font-weight:700;text-transform:uppercase;color:var(--g400)}
+.day-dot{width:28px;height:28px;border-radius:50%;background:var(--g200);display:flex;align-items:center;justify-content:center;font-size:13px;transition:all .4s ease}
+.day-dot.done{background:linear-gradient(135deg,#046c4e,#057a55);color:#fff}
+.day-dot.today{border:2px solid var(--green)}
+.ach-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.ach-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer}
+.ach-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .25s ease;position:relative}
+.ach-item.locked .ach-icon{background:var(--g200);filter:grayscale(1);opacity:.45}
+.ach-item.earned .ach-icon{background:var(--orange-lt);border:1.5px solid #fcd34d}
+.ach-item.earned .ach-icon::after{content:'✓';position:absolute;bottom:-3px;right:-3px;width:15px;height:15px;border-radius:50%;background:var(--green);color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:800;border:1.5px solid white}
+.ach-name{font-size:8.5px;font-weight:700;color:var(--g700);text-align:center;line-height:1.2}
+.ach-item.locked .ach-name{color:var(--g400)}
+.mission-list{display:flex;flex-direction:column;gap:5px}
+.mission-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--g50);border:1.5px solid var(--g200);border-radius:var(--rsm);cursor:pointer;transition:all .25s ease}
+.mission-item.done-m{background:var(--green-lt);border-color:var(--green)}
+.mission-item.done-m .mi-name{text-decoration:line-through;color:var(--g400)}
+.mi-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--g300);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .3s ease}
+.mission-item.done-m .mi-check{background:var(--green);border-color:var(--green);color:#fff;font-size:11px}
+.mi-name{font-size:11px;font-weight:600;color:var(--g700);flex:1}
+.mi-xp{font-size:9.5px;font-weight:800;font-family:'Space Mono',monospace;color:var(--purple);background:var(--purple-lt);padding:2px 7px;border-radius:20px}
+.mission-item.done-m .mi-xp{background:var(--green-lt);color:var(--green)}
+.motiv-banner{border-radius:var(--rsm);padding:10px 13px;display:flex;align-items:center;gap:9px;cursor:pointer;transition:opacity .2s}
+.motiv-banner:hover{opacity:.9}
+.mb-ico{font-size:22px;flex-shrink:0}
+.mb-txt{font-size:11.5px;font-weight:700;line-height:1.45}
+.mb-sub{font-size:10px;font-weight:500;margin-top:2px;opacity:.8}
+.mb-tap{font-size:9px;opacity:.65;font-weight:600;margin-top:3px}
+@keyframes pulse-icon{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}.pulse-anim{animation:pulse-icon 2s infinite}
+
+/* ── ARSIP EMBEDDED ───────────────────────────────────── */
+.arsip-wrap{background:var(--white);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
+.arsip-topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:linear-gradient(135deg,#065f46,#057a55);color:#fff;flex-wrap:wrap;gap:8px}
+.arsip-topbar-left{display:flex;align-items:center;gap:10px}
+.arsip-icon{width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:18px}
+.arsip-title{font-size:14px;font-weight:800;letter-spacing:-.2px}
+.arsip-sub{font-size:10.5px;opacity:.8;margin-top:1px}
+.arsip-topbar-right{display:flex;align-items:center;gap:8px}
+.btn-ghost-w{background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);border-radius:20px;padding:5px 13px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;color:#fff;display:flex;align-items:center;gap:5px;transition:all .2s}
+.btn-ghost-w:hover{background:rgba(255,255,255,.25)}
+
+/* Arsip Stats Row */
+.arsip-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;padding:14px 16px;border-bottom:1px solid var(--g100)}
+.asc{text-align:center;background:var(--g50);border:1.5px solid var(--g200);border-radius:var(--rsm);padding:10px 8px}
+.asc.hi{background:var(--green-lt);border-color:var(--green)}
+.asc .av{font-size:22px;font-weight:800;font-family:'Space Mono',monospace;line-height:1}
+.asc .al{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--g500);margin-top:3px}
+
+/* Arsip Main Layout */
+.arsip-main{display:grid;grid-template-columns:240px 1fr;gap:0;min-height:400px}
+.arsip-sidebar{padding:14px;border-right:1px solid var(--g100);background:var(--g50)}
+.arsip-content{overflow:hidden}
+
+/* Arsip Filter */
+.af-title{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.7px;color:var(--green);margin-bottom:8px}
+.af-input{width:100%;padding:7px 10px;border:1.5px solid var(--g200);border-radius:var(--rsm);font-size:11.5px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;color:var(--g900);background:var(--white);transition:border-color .2s;margin-bottom:8px}
+.af-input:focus{border-color:var(--green)}
+.af-select{width:100%;padding:7px 10px;border:1.5px solid var(--g200);border-radius:var(--rsm);font-size:11.5px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;color:var(--g900);background:var(--white);cursor:pointer;margin-bottom:8px}
+.af-divider{height:1px;background:var(--g200);margin:10px 0}
+.amk-list{display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto}
+.amk-list::-webkit-scrollbar{width:3px}
+.amk-list::-webkit-scrollbar-thumb{background:var(--g300);border-radius:10px}
+.amk-chip{display:flex;align-items:center;justify-content:space-between;padding:5px 9px;border-radius:var(--rxs);background:var(--white);border:1.5px solid var(--g200);cursor:pointer;transition:all .2s;font-size:11px;color:var(--g500)}
+.amk-chip:hover,.amk-chip.aactive{border-color:var(--green);color:var(--green);background:var(--green-lt)}
+.amk-chip .acnt{font-family:'Space Mono',monospace;font-size:9.5px;background:var(--g100);padding:1px 5px;border-radius:8px;color:var(--g400)}
+.amk-chip.aactive .acnt{background:rgba(5,122,85,.15);color:var(--green)}
+
+/* Arsip Table */
+.arsip-table-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--g100);background:var(--white)}
+.arsip-record-count{font-family:'Space Mono',monospace;font-size:10.5px;color:var(--green);background:var(--green-lt);border:1px solid var(--green);padding:3px 9px;border-radius:20px}
+.atable-wrap{overflow-x:auto}
+table.atable{width:100%;border-collapse:collapse;font-size:11.5px}
+table.atable th{padding:8px 12px;text-align:left;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--g400);border-bottom:1.5px solid var(--g200);background:var(--g50);cursor:pointer;white-space:nowrap;user-select:none}
+table.atable th:hover{color:var(--green)}
+table.atable th.asorted{color:var(--green)}
+table.atable tbody tr{border-bottom:1px solid var(--g50);transition:background .15s}
+table.atable tbody tr:hover{background:var(--g50)}
+table.atable td{padding:9px 12px;color:var(--g700);vertical-align:middle}
+.atable .no-c{font-family:'Space Mono',monospace;font-size:10px;color:var(--g400);width:36px;text-align:center}
+.atable .date-c{font-family:'Space Mono',monospace;font-size:10.5px;white-space:nowrap;color:var(--g500)}
+.amk-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;white-space:nowrap}
+.atugas-c{font-weight:600;color:var(--g900);font-size:11.5px;max-width:200px;line-height:1.3}
+.atugas-c .asub{font-size:10px;color:var(--g400);font-weight:400;margin-top:1px}
+.adl-pill{display:inline-flex;align-items:center;gap:3px;font-family:'Space Mono',monospace;font-size:10px;padding:2px 7px;border-radius:20px}
+.adl-pill.past{background:var(--green-lt);border:1px solid var(--green);color:var(--green)}
+.adl-pill.near{background:var(--orange-lt);border:1px solid var(--orange);color:var(--orange)}
+.astatus-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;background:var(--green-lt);border:1px solid var(--green);color:var(--green)}
+.astatus-dot{width:5px;height:5px;border-radius:50%;background:var(--green)}
+.arow-ref{font-family:'Space Mono',monospace;font-size:9.5px;color:var(--g400);background:var(--g100);border:1px solid var(--g200);padding:1px 6px;border-radius:4px}
+.arsip-page-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-top:1px solid var(--g100);background:var(--g50)}
+.apage-info{font-size:10.5px;color:var(--g400);font-family:'Space Mono',monospace}
+.apage-btns{display:flex;gap:4px}
+.apage-btn{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:var(--white);border:1.5px solid var(--g200);color:var(--g500);font-size:11px;cursor:pointer;transition:all .2s;font-family:'Space Mono',monospace;font-weight:700}
+.apage-btn:hover{border-color:var(--green);color:var(--green)}
+.apage-btn.aactive{background:var(--green);color:#fff;border-color:var(--green)}
+.apage-btn:disabled{opacity:.3;cursor:not-allowed}
+.arsip-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:50px 20px;gap:8px}
+.arsip-empty .ei{font-size:36px;opacity:.35}
+.arsip-empty .et{font-size:13px;font-weight:700;color:var(--g400)}
+.arsip-empty .es{font-size:11px;color:var(--g300)}
+
+/* ── MISC ─────────────────────────────────────────────── */
+.legbar{background:white;border-radius:var(--r);padding:9px 16px;margin-top:12px;box-shadow:var(--sh);display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.lbg{font-size:10px;font-weight:800;color:var(--g700)}
+.lbr{display:flex;gap:10px;flex-wrap:wrap}
+.err-box{background:var(--red-lt);border:1.5px solid var(--red);color:var(--red);border-radius:var(--rsm);padding:9px 13px;font-size:11.5px;font-weight:600;margin-bottom:10px;display:none;}
+#progress-bar{position:fixed;top:0;left:0;height:3px;width:0%;z-index:9999;background:linear-gradient(90deg,var(--blue-dk),var(--blue),var(--teal));transition:width .3s ease;border-radius:0 3px 3px 0;}
+.tip{position:fixed;background:var(--g900);color:#fff;padding:5px 9px;border-radius:5px;font-size:10.5px;pointer-events:none;z-index:1000;display:none;max-width:190px;line-height:1.4;white-space:pre-line}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:var(--g100)}::-webkit-scrollbar-thumb{background:var(--g300);border-radius:10px}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.panel{animation:fadeInUp .4s ease both}
+.panel-a{animation-delay:.05s}.panel-w{animation-delay:.1s}.panel-b{animation-delay:.15s}.panel-n{animation-delay:.2s}
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+<div class="tip" id="tip"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <div class="topbar-logo-icon">📊</div>
+    <div class="topbar-title">Student Life <span>Dashboard</span></div>
+  </div>
+  <div class="topbar-right">
+    <span class="chip" id="updateChip">Memuat...</span>
+    <button class="btn btn-primary" id="refreshBtn" onclick="refresh()">
+      <span id="ri">↻</span> Refresh
+    </button>
+  </div>
+</div>
+
+<!-- TAB NAVIGATION -->
+<div class="tab-nav">
+  <button class="tab-btn active-tab" id="tab-dashboard" onclick="switchTab('dashboard')">📊 Dashboard Utama</button>
+  <div class="tab-sep"></div>
+  <button class="tab-btn green-tab" id="tab-arsip" onclick="switchTab('arsip')">🗄️ Arsip Tugas Selesai</button>
+</div>
+
+<div class="err-box" id="err"></div>
+
+<!-- ═══ TAB: DASHBOARD ═══ -->
+<div class="tab-content active" id="content-dashboard">
+
+<div class="grid">
+
+  <!-- ═══ PANEL 1: ACADEMIC ═══ -->
+  <div class="panel panel-a">
+    <div class="ph">
+      <div class="ph-icon">🎓</div>
+      <div class="ph-text">
+        <h2>1. ACADEMIC PRODUCTIVITY</h2>
+        <p>Tugas &amp; Deadline Akademik</p>
+      </div>
+    </div>
+    <div class="pb" style="padding-top:11px">
+
+      <div class="stat-row">
+        <div class="sc"><div class="ico">📋</div><div class="lbl">Total Tugas</div><div class="val c-b" id="a-total"><div class="skel skel-val"></div></div></div>
+        <div class="sc"><div class="ico">✅</div><div class="lbl">Selesai</div><div class="val c-g" id="a-selesai"><div class="skel skel-val"></div></div></div>
+        <div class="sc"><div class="ico">🔄</div><div class="lbl">In Progress</div><div class="val c-o" id="a-prog"><div class="skel skel-val"></div></div></div>
+        <div class="sc"><div class="ico">🕐</div><div class="lbl">Belum Mulai</div><div class="val c-r" id="a-blm"><div class="skel skel-val"></div></div></div>
+        <div class="sc hi"><div class="lbl">Completion Rate</div><div class="val" id="a-cr">--%</div></div>
+      </div>
+
+      <div>
+        <div class="stitle">Tugas Per Mata Kuliah</div>
+        <div class="mk-list" id="mk-bars">
+          <div class="skel skel-bar" style="width:100%"></div>
+          <div class="skel skel-bar" style="width:85%"></div>
+          <div class="skel skel-bar" style="width:70%"></div>
+          <div class="skel skel-bar" style="width:55%"></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="stitle">Distribusi Status Tugas</div>
+        <div class="donut-wrap">
+          <div class="donut-box">
+            <canvas id="c-status"></canvas>
+            <div class="donut-center">
+              <div class="donut-val c-b" id="dc-total">--</div>
+              <div class="donut-sub">Total</div>
+            </div>
+          </div>
+          <div class="legend-list">
+            <div class="li"><div class="ld" style="background:var(--red)"></div>Belum Mulai (<span id="ll-blm">0</span>)</div>
+            <div class="li"><div class="ld" style="background:var(--orange)"></div>In Progress (<span id="ll-prog">0</span>)</div>
+            <div class="li"><div class="ld" style="background:var(--green)"></div>Selesai (<span id="ll-sel">0</span>)</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="stitle">Kalender Deadline</div>
+        <div id="cal"><div class="skel skel-chart"></div></div>
+        <div class="cal-leg">
+          <div class="cll"><div class="cld cb-r"></div>Deadline</div>
+          <div class="cll"><div class="cld" style="background:var(--blue-lt);border-radius:50%"></div>Hari Ini</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ PANEL 2: WEEKEND LIFESTYLE ═══ -->
+  <div class="panel panel-w">
+    <div class="ph">
+      <div class="ph-icon">💚</div>
+      <div class="ph-text">
+        <h2>2. WEEKEND LIFESTYLE</h2>
+        <p>Aktivitas Weekend Mahasiswa</p>
+      </div>
+    </div>
+    <div class="pb" style="padding-top:11px">
+
+      <div class="wstat-row">
+        <div class="wsc"><div class="wv c-g" id="w-akt"><div class="skel skel-val"></div></div><div class="wl">Total Aktivitas</div><div style="font-size:9px;color:var(--g400);margin-top:1px">kegiatan</div></div>
+        <div class="wsc"><div class="wv c-t" id="w-dur"><div class="skel skel-val"></div></div><div class="wl">Total Durasi</div><div style="font-size:9px;color:var(--g400);margin-top:1px">jam</div></div>
+        <div class="wsc fav">
+          <div class="fav-ico" id="w-fav-ico">🎯</div>
+          <div class="fav-nm" id="w-fav-nm">--</div>
+          <div class="wl" style="color:var(--green)">Aktivitas Favorit</div>
+        </div>
+      </div>
+
+      <div>
+        <div class="stitle g">Distribusi Jenis Aktivitas</div>
+        <div class="donut-wrap">
+          <div class="donut-box"><canvas id="c-wknd"></canvas></div>
+          <div class="legend-list" id="wknd-legend">
+            <div class="skel skel-text" style="width:90%"></div>
+            <div class="skel skel-text" style="width:75%"></div>
+            <div class="skel skel-text" style="width:80%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="stitle g">Durasi Aktivitas (Jam)</div>
+        <div class="hb-list" id="dur-list">
+          <div class="skel skel-bar" style="width:100%"></div>
+          <div class="skel skel-bar" style="width:70%"></div>
+          <div class="skel skel-bar" style="width:50%"></div>
+        </div>
+      </div>
+
+      <!-- GAMIFICATION SECTION -->
+      <div class="gamif-section">
+        <div class="level-card">
+          <div class="level-top">
+            <div class="level-badge">
+              <div class="level-badge-icon pulse-anim" id="g-level-icon">🌿</div>
+              <div class="level-info">
+                <h4 id="g-level-title">Mahasiswa Aktif</h4>
+                <span id="g-level-sub">Level 4 — Wellness Seeker</span>
+              </div>
+            </div>
+            <div>
+              <div class="level-num" id="g-level-num">4</div>
+              <div class="level-num-lbl">Level</div>
+            </div>
+          </div>
+          <div class="xp-row">
+            <span class="xp-lbl">XP Progress</span>
+            <span class="xp-val" id="g-xp-text">-- / -- XP</span>
+          </div>
+          <div class="xp-track"><div class="xp-fill" id="g-xp-bar" style="width:0%"></div></div>
+          <div class="xp-next" id="g-xp-next">Memuat XP...</div>
+        </div>
+
+        <div class="streak-row" style="margin-top:10px">
+          <div class="streak-box">
+            <div class="streak-ico">🔥</div>
+            <div class="streak-val" id="g-streak">-</div>
+            <div class="streak-lbl">Hari Streak</div>
+          </div>
+          <div class="stat-mini"><div class="sv c-p" id="g-total-xp">-</div><div class="sl">Total XP</div></div>
+          <div class="stat-mini"><div class="sv c-t" id="g-best">-</div><div class="sl">Best Streak</div></div>
+        </div>
+
+        <div style="margin-top:10px">
+          <div class="mission-lbl">🎯 Misi Harian Weekend</div>
+          <div class="mission-list">
+            <div class="mission-item" data-xp="50" onclick="toggleMission(this)"><div class="mi-check"></div><div class="mi-name">Olahraga minimal 30 menit</div><div class="mi-xp">+50 XP</div></div>
+            <div class="mission-item" data-xp="40" onclick="toggleMission(this)"><div class="mi-check"></div><div class="mi-name">Belajar 2 jam di weekend</div><div class="mi-xp">+40 XP</div></div>
+            <div class="mission-item" data-xp="30" onclick="toggleMission(this)"><div class="mi-check"></div><div class="mi-name">Me-time / Healing activity</div><div class="mi-xp">+30 XP</div></div>
+            <div class="mission-item" data-xp="35" onclick="toggleMission(this)"><div class="mi-check"></div><div class="mi-name">Selesaikan 1 tugas kuliah</div><div class="mi-xp">+35 XP</div></div>
+            <div class="mission-item" data-xp="25" onclick="toggleMission(this)"><div class="mi-check"></div><div class="mi-name">Bebas gadget 1 jam</div><div class="mi-xp">+25 XP</div></div>
+          </div>
+        </div>
+
+        <div style="margin-top:10px">
+          <div class="days-lbl">📅 Aktivitas 7 Hari Terakhir</div>
+          <div class="days-grid" id="g-days-grid"></div>
+        </div>
+
+        <div style="margin-top:10px">
+          <div class="ach-lbl">🥇 Achievement Badges</div>
+          <div class="ach-grid" id="g-ach-grid"></div>
+        </div>
+
+        <div class="motiv-banner" id="g-motiv-banner" onclick="gNextMotiv()"
+          style="margin-top:10px;background:linear-gradient(135deg,#d1fae5,#ecfdf5);border:1.5px solid #6ee7b7;transition:opacity .2s">
+          <div class="mb-ico" id="g-mb-ico">💪</div>
+          <div>
+            <div class="mb-txt" id="g-mb-txt" style="color:#065f46">Kamu sudah aktif! Terus jaga momentum ini.</div>
+            <div class="mb-sub" id="g-mb-sub" style="color:#059669">Streak = Konsistensi = Sukses 🚀</div>
+            <div class="mb-tap" style="color:#6ee7b7">Ketuk untuk pesan berikutnya →</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="note">
+        <span>💡</span>
+        <span>Data dihitung dari aktivitas hari Sabtu &amp; Minggu. Status tugas dibaca dari kolom INPROGRES &amp; SELESAI di sheet.</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ PANEL 3: BALANCE & INSIGHT ═══ -->
+  <div class="panel panel-b">
+    <div class="ph">
+      <div class="ph-icon">⚖️</div>
+      <div class="ph-text">
+        <h2>3. BALANCE &amp; INSIGHT</h2>
+        <p>Keseimbangan Studi &amp; Life</p>
+      </div>
+    </div>
+    <div class="pb" style="padding-top:11px">
+
+      <div class="bstat-row">
+        <div class="bsc"><div class="bi">📚</div><div class="bl">Study Hours</div><div class="bs">(Minggu Ini)</div><div class="bv c-b" id="b-sh"><div class="skel skel-val"></div></div><div style="font-size:8.5px;color:var(--g400);margin-top:2px">jam</div></div>
+        <div class="bsc"><div class="bi">❤️</div><div class="bl">Lifestyle</div><div class="bs">(Minggu Ini)</div><div class="bv c-r" id="b-lh"><div class="skel skel-val"></div></div><div style="font-size:8.5px;color:var(--g400);margin-top:2px">jam</div></div>
+        <div class="bsc"><div class="bi">⚖️</div><div class="bl">Balance Ratio</div><div class="bs">(Study:Life)</div><div class="bv c-p" id="b-br"><div class="skel skel-val"></div></div><div style="font-size:8.5px;color:var(--g400);margin-top:2px" id="b-bl">--</div></div>
+      </div>
+
+      <div>
+        <div class="stitle p">Study vs Lifestyle (Jam)</div>
+        <div class="donut-wrap">
+          <div class="donut-box">
+            <canvas id="c-bal"></canvas>
+            <div class="donut-center"><div class="donut-val c-p" id="dc-bal">--</div><div class="donut-sub">jam total</div></div>
+          </div>
+          <div class="legend-list">
+            <div class="li"><div class="ld" style="background:var(--purple)"></div>Study: <strong id="bl-sh">--</strong> jam</div>
+            <div class="li"><div class="ld" style="background:var(--green)"></div>Lifestyle: <strong id="bl-lh">--</strong> jam</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="stitle p">Trend Produktivitas (4 Minggu Terakhir)</div>
+        <div style="height:105px;position:relative"><canvas id="c-trend"></canvas></div>
+      </div>
+
+      <div class="ig">
+        <div class="ib">
+          <h4>💡 Insight Minggu Ini</h4>
+          <div id="insight-list"><div class="skel skel-text"></div><div class="skel skel-text" style="width:80%"></div><div class="skel skel-text" style="width:90%"></div></div>
+        </div>
+        <div class="ib">
+          <h4>🎯 Rekomendasi</h4>
+          <div id="rekom-list"><div class="skel skel-text"></div><div class="skel skel-text" style="width:85%"></div><div class="skel skel-text" style="width:75%"></div></div>
+        </div>
+      </div>
+
+      <div class="wsm">
+        <h4>📅 Summary Weekend (Minggu Ini)</h4>
+        <div class="wsm-items" id="wsm-items"><div class="skel skel-text" style="width:60%;height:40px"></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ PANEL 4: NOTIFIKASI EMAIL ═══ -->
+  <div class="panel panel-n" style="grid-column:1/-1">
+    <div class="ph">
+      <div class="ph-icon">🔔</div>
+      <div class="ph-text">
+        <h2>4. NOTIFIKASI EMAIL DEADLINE</h2>
+        <p>Pengingat otomatis dikirim ke email kamu setiap pagi jam 07:00</p>
+      </div>
+    </div>
+    <div class="pb" style="padding-top:13px">
+
+      <div class="notif-status-row">
+        <div class="notif-status-dot" id="n-status-dot"></div>
+        <div class="notif-status-text" id="n-status-text">Memuat status notifikasi...</div>
+        <span class="chip" id="n-trigger-chip">Trigger: --</span>
+      </div>
+
+      <div class="notif-form-grid">
+        <div class="notif-form-col">
+          <div class="stitle o">Email Tujuan</div>
+          <input id="n-email" type="email" class="notif-input" placeholder="nama@gmail.com">
+        </div>
+        <div class="notif-form-col">
+          <div class="stitle o">Ingatkan H- (hari sebelum deadline)</div>
+          <select id="n-days" class="notif-select">
+            <option value="1">H-1 (1 hari sebelum)</option>
+            <option value="2">H-2 (2 hari sebelum)</option>
+            <option value="3" selected>H-3 (3 hari sebelum)</option>
+            <option value="5">H-5 (5 hari sebelum)</option>
+            <option value="7">H-7 (1 minggu sebelum)</option>
+          </select>
+        </div>
+        <div class="notif-form-col" style="gap:8px">
+          <label class="notif-check-label">
+            <input type="checkbox" id="n-enabled"> Aktifkan Notifikasi
+          </label>
+          <button class="btn" id="n-save-btn" onclick="saveNotifConfig()"
+            style="background:var(--orange);color:#fff;font-size:11.5px;padding:7px 16px;white-space:nowrap;border-radius:20px">
+            💾 Simpan &amp; Aktifkan
+          </button>
+        </div>
+      </div>
+
+      <div class="notif-actions">
+        <button class="btn" onclick="testEmail()" style="background:var(--purple);color:#fff;font-size:11px;padding:6px 14px">🧪 Kirim Email Test</button>
+        <button class="btn" id="n-preview-btn" onclick="togglePreview()" style="background:var(--teal);color:#fff;font-size:11px;padding:6px 14px">👁️ Preview Deadline Terdekat</button>
+      </div>
+
+      <div class="n-alert" id="n-alert"></div>
+
+      <div class="notif-preview" id="n-preview" style="display:none">
+        <div class="stitle o">Deadline dalam 14 hari ke depan</div>
+        <div class="notif-preview-wrap"><div id="n-preview-content"></div></div>
+      </div>
+
+      <div class="notif-info">
+        <strong>📋 Cara Kerja Notifikasi:</strong><br>
+        1. Masukkan email tujuan &amp; atur H- (berapa hari sebelum deadline kamu ingin diingatkan)<br>
+        2. Centang <em>Aktifkan Notifikasi</em> lalu klik <strong>Simpan &amp; Aktifkan</strong><br>
+        3. Email otomatis dikirim setiap pagi jam 07:00 berisi daftar tugas mendekati deadline<br>
+        4. Klik <strong>Kirim Email Test</strong> untuk memastikan email masuk dengan benar<br>
+        <strong>📌 Catatan:</strong> Status tugas dibaca dari kolom <strong>INPROGRES</strong> dan <strong>SELESAI</strong> di sheet.
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /grid -->
+
+<!-- LEGEND BAR -->
+<div class="legbar">
+  <div class="lbg">STATUS TUGAS:</div>
+  <div class="lbr">
+    <div class="li"><div class="ld" style="background:var(--red)"></div><span style="font-size:10.5px">Belum Mulai</span></div>
+    <div class="li"><div class="ld" style="background:var(--orange)"></div><span style="font-size:10.5px">In Progress (INPROGRES='PROSES')</span></div>
+    <div class="li"><div class="ld" style="background:var(--green)"></div><span style="font-size:10.5px">Selesai (SELESAI='SELESAI')</span></div>
+  </div>
+  <div style="width:1px;height:18px;background:var(--g200)"></div>
+  <div class="lbg">AKTIVITAS WEEKEND:</div>
+  <div class="lbr">
+    <div class="li"><div class="ld" style="background:var(--green)"></div><span style="font-size:10.5px">Workout</span></div>
+    <div class="li"><div class="ld" style="background:var(--blue)"></div><span style="font-size:10.5px">Belajar</span></div>
+    <div class="li"><div class="ld" style="background:var(--orange)"></div><span style="font-size:10.5px">Hiburan</span></div>
+    <div class="li"><div class="ld" style="background:var(--purple)"></div><span style="font-size:10.5px">Organisasi</span></div>
+    <div class="li"><div class="ld" style="background:var(--teal)"></div><span style="font-size:10.5px">Freelancer</span></div>
+  </div>
+</div>
+
+</div><!-- /content-dashboard -->
+
+<!-- ═══ TAB: ARSIP ═══ -->
+<div class="tab-content" id="content-arsip">
+<div class="arsip-wrap">
+
+  <!-- Arsip Topbar -->
+  <div class="arsip-topbar">
+    <div class="arsip-topbar-left">
+      <div class="arsip-icon">🗄️</div>
+      <div>
+        <div class="arsip-title">Arsip Tugas Selesai</div>
+        <div class="arsip-sub">Riwayat semua tugas yang telah diselesaikan</div>
+      </div>
+    </div>
+    <div class="arsip-topbar-right">
+      <span class="chip ok" id="arsip-chip">Memuat...</span>
+      <button class="btn-ghost-w" onclick="exportArsipCSV()">⬇ Export CSV</button>
+      <button class="btn-ghost-w" id="arsip-refresh-btn" onclick="loadArsip()"><span id="arsip-ri">↻</span> Refresh</button>
+    </div>
+  </div>
+
+  <!-- Arsip Stats -->
+  <div class="arsip-stats">
+    <div class="asc hi">
+      <div class="av c-g" id="as-total">--</div>
+      <div class="al">Total Selesai</div>
+    </div>
+    <div class="asc">
+      <div class="av c-b" id="as-mk">--</div>
+      <div class="al">Mata Kuliah</div>
+    </div>
+    <div class="asc">
+      <div class="av c-o" style="font-size:14px;letter-spacing:0" id="as-last">--</div>
+      <div class="al">Terakhir Selesai</div>
+    </div>
+    <div class="asc">
+      <div class="av c-p" id="as-cr">--%</div>
+      <div class="al">Completion Rate</div>
+    </div>
+    <div class="asc">
+      <div class="av c-t" style="font-size:14px;letter-spacing:0" id="as-top">--</div>
+      <div class="al">MK Terbanyak</div>
+    </div>
+  </div>
+
+  <!-- Arsip Main -->
+  <div class="arsip-main">
+
+    <!-- Arsip Sidebar -->
+    <div class="arsip-sidebar">
+      <div class="af-title">🔍 Filter &amp; Cari</div>
+      <input class="af-input" id="arsip-search" placeholder="Cari tugas / mata kuliah..." oninput="arsipApplyFilter()">
+      <select class="af-select" id="arsip-sort" onchange="arsipApplyFilter()">
+        <option value="tanggal_desc">Terbaru dulu</option>
+        <option value="tanggal_asc">Terlama dulu</option>
+        <option value="mk_asc">MK (A–Z)</option>
+        <option value="tugas_asc">Tugas (A–Z)</option>
+        <option value="deadline_asc">Deadline terdekat</option>
+      </select>
+      <select class="af-select" id="arsip-perpage" onchange="arsipApplyFilter()">
+        <option value="15">15 per halaman</option>
+        <option value="25" selected>25 per halaman</option>
+        <option value="50">50 per halaman</option>
+        <option value="999">Tampilkan semua</option>
+      </select>
+
+      <div class="af-divider"></div>
+      <div class="af-title">📂 Filter Mata Kuliah</div>
+      <div class="amk-list" id="arsip-mk-list">
+        <div class="skel" style="height:26px;width:100%;margin-bottom:4px"></div>
+        <div class="skel" style="height:26px;width:85%;margin-bottom:4px"></div>
+        <div class="skel" style="height:26px;width:90%"></div>
+      </div>
+    </div>
+
+    <!-- Arsip Table -->
+    <div class="arsip-content">
+      <div class="arsip-table-head">
+        <div style="font-size:11px;font-weight:700;color:var(--g700)">Daftar Arsip</div>
+        <div class="arsip-record-count" id="arsip-record-count">-- entri</div>
+      </div>
+      <div class="atable-wrap">
+        <table class="atable">
+          <thead>
+            <tr>
+              <th class="no-c">#</th>
+              <th onclick="arsipSortBy('tanggal')">Tanggal <span id="asort-tanggal">▼</span></th>
+              <th onclick="arsipSortBy('mk')">Mata Kuliah <span id="asort-mk">⬍</span></th>
+              <th onclick="arsipSortBy('tugas')">Tugas <span id="asort-tugas">⬍</span></th>
+              <th onclick="arsipSortBy('deadline')">Deadline <span id="asort-deadline">⬍</span></th>
+              <th>Waktu</th>
+              <th>Status</th>
+              <th>Ref</th>
+            </tr>
+          </thead>
+          <tbody id="arsip-tbody">
+            <tr><td colspan="8"><div class="skel" style="height:13px;width:90%;margin:10px 14px"></div></td></tr>
+            <tr><td colspan="8"><div class="skel" style="height:13px;width:78%;margin:10px 14px"></div></td></tr>
+            <tr><td colspan="8"><div class="skel" style="height:13px;width:85%;margin:10px 14px"></div></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="arsip-page-bar">
+        <div class="apage-info" id="arsip-page-info">-- entri</div>
+        <div class="apage-btns" id="arsip-page-btns"></div>
+      </div>
+    </div>
+
+  </div><!-- /arsip-main -->
+</div><!-- /arsip-wrap -->
+</div><!-- /content-arsip -->
+
+<script>
+// ══════════════════════════════════════════════════════════════
+//  TAB SWITCHING
+// ══════════════════════════════════════════════════════════════
+var arsipLoaded = false;
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(function(el){el.classList.remove('active');});
+  document.querySelectorAll('.tab-btn').forEach(function(el){el.classList.remove('active-tab');});
+  document.getElementById('content-'+tab).classList.add('active');
+  var btn = document.getElementById('tab-'+tab);
+  btn.classList.add('active-tab');
+  if (tab === 'arsip' && !arsipLoaded) {
+    arsipLoaded = true;
+    loadArsip();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CHART INSTANCES
+// ══════════════════════════════════════════════════════════════
+var CH = { status:null, wknd:null, bal:null, trend:null };
+
+var WC = {
+  'Workout / Olahraga':'#057a55',
+  'Belajar':'#1a56db',
+  'Hiburan / Healing':'#d97706',
+  'Organisasi':'#7e3af2',
+  'Freelancer':'#0694a2'
+};
+var WI = {
+  'Workout / Olahraga':'🏋️',
+  'Belajar':'📚',
+  'Hiburan / Healing':'🎮',
+  'Organisasi':'🏠',
+  'Freelancer':'💻'
+};
+
+// ══════════════════════════════════════════════════════════════
+//  PROGRESS BAR
+// ══════════════════════════════════════════════════════════════
+var progressInterval = null;
+function startProgress() {
+  var bar = document.getElementById('progress-bar');
+  var p = 0;
+  bar.style.width = '0%';
+  bar.style.opacity = '1';
+  clearInterval(progressInterval);
+  progressInterval = setInterval(function() {
+    p += (90 - p) * 0.08;
+    bar.style.width = Math.min(p, 88) + '%';
+  }, 80);
+}
+function finishProgress() {
+  clearInterval(progressInterval);
+  var bar = document.getElementById('progress-bar');
+  bar.style.width = '100%';
+  setTimeout(function() { bar.style.opacity = '0'; }, 400);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  LOAD DASHBOARD DATA
+// ══════════════════════════════════════════════════════════════
+function loadData() {
+  setRefreshLoading(true);
+  startProgress();
+  google.script.run
+    .withSuccessHandler(onData)
+    .withFailureHandler(onError)
+    .getData();
+}
+
+function onData(data) {
+  finishProgress();
+  setRefreshLoading(false);
+  document.getElementById('err').style.display = 'none';
+  renderAcademic(data.academic);
+  setTimeout(function() { renderWeekend(data.weekend); }, 30);
+  setTimeout(function() { renderBalance(data.balance, data.weekend); }, 60);
+  var chip = document.getElementById('updateChip');
+  chip.textContent = 'Update: ' + (data.lastUpdated || '--');
+  chip.className = 'chip ok';
+}
+
+function onError(e) {
+  finishProgress();
+  setRefreshLoading(false);
+  var chip = document.getElementById('updateChip');
+  chip.textContent = 'Gagal';
+  chip.className = 'chip err';
+  showErr('Gagal memuat data: ' + (e.message || e));
+}
+
+function refresh() { loadData(); }
+
+function setRefreshLoading(v) {
+  var btn = document.getElementById('refreshBtn');
+  var ri  = document.getElementById('ri');
+  if (v) { btn.classList.add('loading'); ri.classList.add('spin'); }
+  else   { btn.classList.remove('loading'); ri.classList.remove('spin'); }
+}
+
+function showErr(msg) {
+  var el = document.getElementById('err');
+  el.textContent = '⚠️ ' + msg;
+  el.style.display = 'block';
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ACADEMIC
+// ══════════════════════════════════════════════════════════════
+function renderAcademic(ac) {
+  setText('a-total',   ac.totalTugas);
+  setText('a-selesai', ac.selesai);
+  setText('a-prog',    ac.inProgress);
+  setText('a-blm',     ac.belumMulai);
+  setText('a-cr',      ac.completionRate + '%');
+  setText('dc-total',  ac.totalTugas);
+  setText('ll-blm',    ac.belumMulai);
+  setText('ll-prog',   ac.inProgress);
+  setText('ll-sel',    ac.selesai);
+
+  var entries = Object.entries(ac.tugasPerMK).sort(function(a,b){return b[1]-a[1];});
+  var max = entries[0] ? entries[0][1] : 1;
+  document.getElementById('mk-bars').innerHTML = entries.map(function(e){
+    var mk = e[0], cnt = e[1];
+    return '<div class="mk-row">' +
+      '<div class="mk-name" title="'+mk+'">'+mk+'</div>' +
+      '<div class="mk-track"><div class="mk-fill" style="width:'+Math.round(cnt/max*100)+'%"></div></div>' +
+      '<div class="mk-cnt">'+cnt+'</div>' +
+    '</div>';
+  }).join('');
+
+  mkDonut('c-status','status',
+    [ac.belumMulai, ac.inProgress, ac.selesai],
+    ['Belum Mulai','In Progress','Selesai'],
+    ['#e02424','#d97706','#057a55']);
+
+  renderCal(ac.deadlineList);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  WEEKEND
+// ══════════════════════════════════════════════════════════════
+function renderWeekend(wk) {
+  setText('w-akt', wk.totalAktivitas);
+  setText('w-dur', wk.totalDurasi);
+
+  var fav = wk.aktivitasFavorit || 'Belajar';
+  document.getElementById('w-fav-ico').textContent = WI[fav] || '🎯';
+  document.getElementById('w-fav-nm').textContent  = fav.split('/')[0].trim();
+
+  var dist = Object.entries(wk.distribusi).filter(function(e){return e[1]>0;}).sort(function(a,b){return b[1]-a[1];});
+  var tot  = dist.reduce(function(s,e){return s+e[1];},0);
+
+  mkDonut('c-wknd','wknd',
+    dist.map(function(e){return e[1];}),
+    dist.map(function(e){return e[0];}),
+    dist.map(function(e){return WC[e[0]]||'#888';}));
+
+  document.getElementById('wknd-legend').innerHTML = dist.map(function(e){
+    var k=e[0], v=e[1];
+    return '<div class="li"><div class="ld" style="background:'+(WC[k]||'#888')+'"></div>'+
+      k.split('/')[0].trim()+' — '+(tot>0?Math.round(v/tot*100):0)+'%</div>';
+  }).join('');
+
+  var maxD = dist[0] ? dist[0][1] : 1;
+  document.getElementById('dur-list').innerHTML = dist.map(function(e){
+    var k=e[0], v=e[1];
+    return '<div class="hb-row">'+
+      '<div class="hb-lbl">'+k+'</div>'+
+      '<div class="hb-track"><div class="hb-fill" style="width:'+Math.round(v/maxD*100)+'%;background:'+(WC[k]||'#888')+'"></div></div>'+
+      '<div class="hb-val">'+v.toFixed(1)+'</div>'+
+    '</div>';
+  }).join('');
+
+  gRenderLevel(wk);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  BALANCE
+// ══════════════════════════════════════════════════════════════
+function renderBalance(bl, wk) {
+  setText('b-sh', bl.studyHours);
+  setText('b-lh', bl.lifestyleHours);
+  setText('b-br', bl.balanceRatio.toFixed(2));
+  setText('bl-sh', bl.studyHours);
+  setText('bl-lh', bl.lifestyleHours);
+
+  var tot = bl.studyHours + bl.lifestyleHours;
+  setText('dc-bal', tot.toFixed(1));
+  var ratio = bl.balanceRatio;
+  document.getElementById('b-bl').textContent =
+    ratio > .6 ? 'Study Dominan' : ratio < .3 ? 'Life Dominan' : 'Seimbang';
+
+  mkDonut('c-bal','bal',
+    [bl.studyHours, bl.lifestyleHours],
+    ['Study Hours','Lifestyle Hours'],
+    ['#7e3af2','#057a55']);
+
+  renderTrend(bl.weeklyTrend, bl.completionRate);
+  renderInsight(bl, wk);
+
+  var dist = Object.entries(wk.distribusi||{}).filter(function(e){return e[1]>0;}).sort(function(a,b){return b[1]-a[1];});
+  document.getElementById('wsm-items').innerHTML = dist.map(function(e){
+    var k=e[0], v=e[1];
+    return '<div class="wi">'+
+      '<div class="wii">'+(WI[k]||'🎯')+'</div>'+
+      '<div class="wiv">'+v.toFixed(1)+'</div>'+
+      '<div class="wil">'+k.split('/')[0].trim().slice(0,9)+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+function renderInsight(bl, wk) {
+  var ins = [], rek = [];
+  if (wk && wk.distribusi) {
+    var top = Object.entries(wk.distribusi).sort(function(a,b){return b[1]-a[1];})[0];
+    if (top) ins.push({ ic:'✅', t:'Aktivitas terbanyak: '+top[0].split('/')[0].trim()+' ('+top[1].toFixed(1)+' jam)' });
+  }
+  ins.push({ ic:'✅', t:'Completion rate '+bl.completionRate+'%. '+(bl.completionRate<50?'Terus tingkatkan! 💪':'Pertahankan! 🎉') });
+  ins.push({ ic:'✅', t: bl.balanceRatio>.6 ? 'Studi sangat dominan, jangan lupa istirahat!' :
+    bl.balanceRatio<.3 ? 'Porsi belajar kurang minggu ini.' : 'Keseimbangan studi & lifestyle baik.' });
+  rek.push({ ic:'🏋️', t:'Pertahankan rutinitas olahraga untuk produktivitas.' });
+  rek.push({ ic:'📝', t:'Fokus selesaikan tugas yang belum dimulai.' });
+  rek.push({ ic:'⏰', t:'Atur sesi belajar agar tidak bentrok dengan deadline.' });
+  document.getElementById('insight-list').innerHTML = ins.map(function(i){
+    return '<div class="ii"><span class="ic">'+i.ic+'</span>'+i.t+'</div>';
+  }).join('');
+  document.getElementById('rekom-list').innerHTML = rek.map(function(r){
+    return '<div class="ii"><span class="ic">'+r.ic+'</span>'+r.t+'</div>';
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CHARTS
+// ══════════════════════════════════════════════════════════════
+function mkDonut(id, key, data, labels, colors) {
+  var ctx = document.getElementById(id).getContext('2d');
+  if (CH[key]) { CH[key].destroy(); CH[key] = null; }
+  CH[key] = new Chart(ctx, {
+    type:'doughnut',
+    data:{ labels:labels, datasets:[{ data:data, backgroundColor:colors, borderWidth:2, borderColor:'#fff', hoverOffset:4 }] },
+    options:{
+      responsive:true, maintainAspectRatio:true, cutout:'65%',
+      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:function(c){ return ' '+c.label+': '+c.parsed; } } } },
+      animation:{ duration:500 }
+    }
+  });
+}
+
+function renderTrend(trend, cr) {
+  var ctx = document.getElementById('c-trend').getContext('2d');
+  if (CH.trend) { CH.trend.destroy(); CH.trend = null; }
+  var labels = trend.map(function(w){return w.label;});
+  var sh     = trend.map(function(w){return w.studyHours;});
+  var crData = trend.map(function(_,i){ return Math.max(5,Math.min(100,cr-(trend.length-1-i)*8)); });
+  CH.trend = new Chart(ctx, {
+    type:'line',
+    data:{
+      labels:labels,
+      datasets:[
+        { label:'Completion Rate (%)', data:crData, borderColor:'#7e3af2', backgroundColor:'rgba(126,58,242,.07)', pointBackgroundColor:'#7e3af2', pointRadius:3.5, tension:.35, yAxisID:'y1' },
+        { label:'Study Hours (jam)',   data:sh,     borderColor:'#057a55', backgroundColor:'rgba(5,122,85,.07)',   pointBackgroundColor:'#057a55', pointRadius:3.5, tension:.35, yAxisID:'y2' }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{ display:true, position:'top', labels:{ font:{ size:8.5, family:'Plus Jakarta Sans' }, boxWidth:9, padding:7 } },
+        tooltip:{ mode:'index', intersect:false }
+      },
+      scales:{
+        x:{ grid:{ display:false }, ticks:{ font:{ size:8.5 } } },
+        y1:{ type:'linear', position:'left', min:0, max:100, ticks:{ font:{ size:8.5 }, callback:function(v){return v+'%';} }, grid:{ color:'#f3f4f6' } },
+        y2:{ type:'linear', position:'right', ticks:{ font:{ size:8.5 } }, grid:{ display:false } }
+      },
+      animation:{ duration:600 }
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  CALENDAR
+// ══════════════════════════════════════════════════════════════
+function renderCal(deadlines) {
+  var now = new Date();
+  var yr = now.getFullYear(), mo = now.getMonth();
+  var firstDay = new Date(yr, mo, 1).getDay();
+  var days = new Date(yr, mo+1, 0).getDate();
+  var offset = firstDay===0 ? 6 : firstDay-1;
+
+  var dlMap = {};
+  (deadlines||[]).forEach(function(d) {
+    if (!d.deadline||d.deadline==='-') return;
+    var p = d.deadline.split('/');
+    if (p.length!==3) return;
+    if (parseInt(p[2])===yr && parseInt(p[1])-1===mo) {
+      var day = parseInt(p[0]);
+      if (!dlMap[day]) dlMap[day]=[];
+      dlMap[day].push(d);
+    }
+  });
+
+  var MN=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  var DN=['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
+
+  var h = '<div class="cal-top"><div class="cal-month">'+MN[mo]+' '+yr+'</div></div>';
+  h += '<div class="cal-grid">';
+  DN.forEach(function(d){h+='<div class="ch">'+d+'</div>';});
+  for (var i=0;i<offset;i++) h+='<div class="cd"></div>';
+  for (var day=1;day<=days;day++) {
+    var isToday = day===now.getDate();
+    var has = dlMap[day];
+    var cls='cd'+(isToday?' today':'')+(has?' has-dl':'');
+    var tip = has ? has.map(function(x){return x.mk+': '+x.tugas;}).join('\n') : '';
+    var badges='';
+    if (has) {
+      var short = has[0].mk.length>9 ? has[0].mk.slice(0,7)+'…' : has[0].mk;
+      badges += '<div class="cb cb-r">'+short+'</div>';
+      if (has.length>1) badges += '<div class="cb cb-o">+'+(has.length-1)+'</div>';
+    }
+    var tipAttr = tip ? 'onmouseover="showTip(event,\''+tip.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n')+'\')" onmouseout="hideTip()"' : '';
+    h+='<div class="'+cls+'" '+tipAttr+'><span class="cd-n">'+day+'</span>'+badges+'</div>';
+  }
+  h+='</div>';
+  document.getElementById('cal').innerHTML=h;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  TOOLTIP
+// ══════════════════════════════════════════════════════════════
+function showTip(e,t){
+  var el=document.getElementById('tip');
+  el.textContent=t.replace(/\\n/g,'\n');
+  el.style.display='block';
+  el.style.left=(e.clientX+12)+'px';
+  el.style.top=(e.clientY-30)+'px';
+}
+function hideTip(){document.getElementById('tip').style.display='none';}
+function setText(id,v){var el=document.getElementById(id);if(el) el.textContent=v;}
+
+// ══════════════════════════════════════════════════════════════
+//  NOTIFIKASI EMAIL
+// ══════════════════════════════════════════════════════════════
+function loadNotifConfig() {
+  google.script.run
+    .withSuccessHandler(function(cfg) {
+      document.getElementById('n-email').value     = cfg.email    || '';
+      document.getElementById('n-days').value      = String(cfg.warnDays || 3);
+      document.getElementById('n-enabled').checked = cfg.enabled !== false;
+      var dot  = document.getElementById('n-status-dot');
+      var txt  = document.getElementById('n-status-text');
+      var chip = document.getElementById('n-trigger-chip');
+      if (cfg.enabled) {
+        dot.classList.add('active');
+        txt.textContent = '✅ Notifikasi AKTIF — Email dikirim setiap hari jam 07:00';
+        txt.style.color = 'var(--green)';
+      } else {
+        dot.classList.remove('active');
+        txt.textContent = 'Notifikasi tidak aktif. Aktifkan di bawah untuk mulai menerima pengingat.';
+        txt.style.color = 'var(--g500)';
+      }
+      chip.textContent = cfg.triggerSet ? '✅ Trigger Aktif' : '⚠️ Trigger Belum Pasang';
+      chip.className   = 'chip ' + (cfg.triggerSet ? 'ok' : 'err');
+    })
+    .withFailureHandler(function(e) { console.warn('loadNotifConfig error:', e.message); })
+    .getNotifConfig();
+}
+
+function saveNotifConfig() {
+  var email   = document.getElementById('n-email').value.trim();
+  var days    = parseInt(document.getElementById('n-days').value);
+  var enabled = document.getElementById('n-enabled').checked;
+  if (enabled && (!email || !email.includes('@'))) {
+    showNotifAlert('⚠️ Masukkan alamat email yang valid terlebih dahulu!', 'err');
+    return;
+  }
+  var btn = document.getElementById('n-save-btn');
+  btn.textContent = '⏳ Menyimpan...'; btn.disabled = true;
+  google.script.run
+    .withSuccessHandler(function(res) {
+      btn.textContent = '💾 Simpan & Aktifkan'; btn.disabled = false;
+      if (res && res.success) {
+        showNotifAlert('✅ Konfigurasi berhasil disimpan!', 'ok');
+        loadNotifConfig();
+      } else {
+        showNotifAlert('❌ Gagal menyimpan konfigurasi.', 'err');
+      }
+    })
+    .withFailureHandler(function(e) {
+      btn.textContent = '💾 Simpan & Aktifkan'; btn.disabled = false;
+      showNotifAlert('❌ Error: ' + (e.message || e), 'err');
+    })
+    .saveNotifConfig({ email: email, warnDays: days, enabled: enabled });
+}
+
+function testEmail() {
+  showNotifAlert('📨 Mengirim email test, harap tunggu...', 'info');
+  google.script.run
+    .withSuccessHandler(function(res) {
+      showNotifAlert(res.success ? '✅ ' + res.msg : '❌ ' + res.msg, res.success ? 'ok' : 'err');
+    })
+    .withFailureHandler(function(e) { showNotifAlert('❌ Gagal kirim: ' + (e.message || e), 'err'); })
+    .testSendEmail();
+}
+
+var previewLoaded = false;
+function togglePreview() {
+  var el  = document.getElementById('n-preview');
+  var btn = document.getElementById('n-preview-btn');
+  if (el.style.display !== 'none') {
+    el.style.display = 'none'; btn.textContent = '👁️ Preview Deadline Terdekat';
+    previewLoaded = false; return;
+  }
+  el.style.display = 'block'; btn.textContent = '🙈 Sembunyikan Preview';
+  var content = document.getElementById('n-preview-content');
+  content.innerHTML = '<div style="padding:16px;text-align:center"><div class="skel" style="height:12px;width:80%;margin:0 auto 8px"></div></div>';
+  google.script.run
+    .withSuccessHandler(function(data) {
+      var today = new Date(); today.setHours(0,0,0,0);
+      var list = (data.academic.deadlineList || []).filter(function(t) {
+        if (!t.deadline || t.deadline === '-') return false;
+        var p = t.deadline.split('/');
+        if (p.length !== 3) return false;
+        var dl = new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0]));
+        dl.setHours(0,0,0,0);
+        var diff = Math.ceil((dl - today) / 86400000);
+        return diff >= 0 && diff <= 14;
+      });
+      if (!list.length) {
+        content.innerHTML = '<div style="text-align:center;padding:24px;color:var(--g400);font-size:12px;">🎉 Tidak ada deadline dalam 14 hari ke depan!</div>';
+        return;
+      }
+      content.innerHTML = '<table class="n-dl-table"><thead><tr>' +
+        '<th>Mata Kuliah</th><th>Tugas</th><th style="text-align:center">Deadline</th><th style="text-align:center">Status</th>' +
+        '</tr></thead><tbody>' +
+        list.map(function(t) {
+          var p = t.deadline.split('/');
+          var dl = new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0]));
+          dl.setHours(0,0,0,0);
+          var diff = Math.ceil((dl - today) / 86400000);
+          var badge;
+          if (diff === 0)      badge = '<span class="badge-urgent">⚡ Hari Ini</span>';
+          else if (diff <= 2)  badge = '<span class="badge-urgent">🚨 '+diff+' hari lagi</span>';
+          else if (diff <= 5)  badge = '<span class="badge-soon">⚠️ '+diff+' hari lagi</span>';
+          else                 badge = '<span class="badge-ok">📅 '+diff+' hari lagi</span>';
+          return '<tr><td><strong>'+t.mk+'</strong></td><td style="color:var(--g500)">'+t.tugas+'</td>' +
+            '<td style="text-align:center;font-family:\'Space Mono\',monospace;font-size:10.5px">'+t.deadline+'</td>' +
+            '<td style="text-align:center">'+badge+'</td></tr>';
+        }).join('') + '</tbody></table>';
+    })
+    .withFailureHandler(function(e) {
+      content.innerHTML = '<div style="padding:16px;color:var(--red);font-size:12px">Gagal memuat data.</div>';
+    })
+    .getData();
+}
+
+function showNotifAlert(msg, type) {
+  var el = document.getElementById('n-alert');
+  el.textContent = msg; el.className = 'n-alert ' + (type || 'info');
+  el.style.display = 'block';
+  clearTimeout(el._hideTimer);
+  if (type === 'ok') el._hideTimer = setTimeout(function() { el.style.display='none'; }, 6000);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  GAMIFICATION
+// ══════════════════════════════════════════════════════════════
+var G_LEVELS=[
+  {min:0,max:200,lv:1,title:'Pemula Semangat',sub:'Fresh Starter',icon:'🌱'},
+  {min:200,max:500,lv:2,title:'Mahasiswa Rajin',sub:'Consistent Learner',icon:'📖'},
+  {min:500,max:900,lv:3,title:'Pejuang Kampus',sub:'Campus Fighter',icon:'⚡'},
+  {min:900,max:1400,lv:4,title:'Mahasiswa Aktif',sub:'Wellness Seeker',icon:'🌿'},
+  {min:1400,max:2000,lv:5,title:'Lifestyle Master',sub:'Balanced Life',icon:'🏅'},
+  {min:2000,max:2800,lv:6,title:'Superstar Kampus',sub:'Peak Performer',icon:'⭐'},
+  {min:2800,max:4000,lv:7,title:'Elite Scholar',sub:'Academic Legend',icon:'🏆'},
+  {min:4000,max:99999,lv:8,title:'Grand Master',sub:'Unstoppable',icon:'👑'}
+];
+var G_MOTIVS=[
+  {ico:'💪',txt:'Kamu sudah aktif! Terus jaga momentum ini.',sub:'Streak = Konsistensi = Sukses 🚀',bg:'linear-gradient(135deg,#d1fae5,#ecfdf5)',bc:'#6ee7b7',tc:'#065f46',sc:'#059669'},
+  {ico:'🎯',txt:'Aktivitas seminggu ini luar biasa! Di atas rata-rata mahasiswa.',sub:'Keep going, masa depan cerah menantimu ✨',bg:'linear-gradient(135deg,#ede9fe,#f5f3ff)',bc:'#c4b5fd',tc:'#4c1d95',sc:'#7c3aed'},
+  {ico:'🌿',txt:'Balance adalah kunci. Belajar keras, istirahat cukup, hidup sehat.',sub:'Kamu sedang di jalur yang benar! 🌈',bg:'linear-gradient(135deg,#dbeafe,#eff6ff)',bc:'#93c5fd',tc:'#1e3a8a',sc:'#1d4ed8'},
+  {ico:'🔥',txt:'Setiap misi yang kamu centang membawamu selangkah lebih dekat ke tujuan!',sub:'Misi hari ini: selesaikan satu per satu 🚀',bg:'linear-gradient(135deg,#fef3c7,#fffbeb)',bc:'#fcd34d',tc:'#78350f',sc:'#92400e'},
+  {ico:'🏆',txt:'Level bukan finish line — ini awal dari perjalanan besar kamu!',sub:'Terus kumpulkan XP dan raih achievement! ⭐',bg:'linear-gradient(135deg,#fce7f3,#fdf2f8)',bc:'#f9a8d4',tc:'#831843',sc:'#be185d'}
+];
+var G_ACH=[
+  {icon:'🔥',name:'7-Day Streak',earned:false},
+  {icon:'🏋️',name:'Workout Hero',earned:false},
+  {icon:'📚',name:'Study 10h+',earned:false},
+  {icon:'🎮',name:'Me-Time Pro',earned:false},
+  {icon:'⚡',name:'Early Bird',earned:false},
+  {icon:'🌙',name:'Night Owl',earned:false},
+  {icon:'💡',name:'Task Master',earned:false},
+  {icon:'🌟',name:'5-Level Up',earned:false},
+  {icon:'🤝',name:'Team Player',earned:false},
+  {icon:'🏆',name:'Grand Slam',earned:false}
+];
+var gMIdx=0;
+
+function gGetLevelData(totalXP){
+  for(var i=0;i<G_LEVELS.length;i++){
+    var L=G_LEVELS[i];
+    if(totalXP>=L.min&&totalXP<L.max) return L;
+  }
+  return G_LEVELS[G_LEVELS.length-1];
+}
+
+function gRenderLevel(wkData){
+  var base=500;
+  var studyXP   = Math.round((wkData.distribusi['Belajar']||0)*20);
+  var workoutXP = Math.round((wkData.distribusi['Workout / Olahraga']||0)*25);
+  var healXP    = Math.round((wkData.distribusi['Hiburan / Healing']||0)*12);
+  var totalXP   = base + studyXP + workoutXP + healXP;
+  var streak = Math.min(30, Math.floor(totalXP/80));
+  var best   = streak + 5;
+  document.getElementById('g-streak').textContent   = streak;
+  document.getElementById('g-total-xp').textContent = totalXP.toLocaleString();
+  document.getElementById('g-best').textContent     = best;
+  var L      = gGetLevelData(totalXP);
+  var xpIn   = totalXP - L.min;
+  var xpNeed = (L.max === 99999) ? 1000 : L.max - L.min;
+  var pct    = Math.min(100, Math.round(xpIn/xpNeed*100));
+  var nextIdx = G_LEVELS.indexOf(L)+1;
+  var nextL   = nextIdx < G_LEVELS.length ? G_LEVELS[nextIdx] : null;
+  document.getElementById('g-level-num').textContent   = L.lv;
+  document.getElementById('g-level-title').textContent = L.title;
+  document.getElementById('g-level-sub').textContent   = 'Level '+L.lv+' — '+L.sub;
+  document.getElementById('g-level-icon').textContent  = L.icon;
+  document.getElementById('g-xp-text').textContent     = xpIn+' / '+xpNeed+' XP';
+  document.getElementById('g-xp-next').textContent     = nextL
+    ? '✨ '+(xpNeed-xpIn)+' XP lagi untuk Level '+(L.lv+1)+' — '+nextL.title+'!'
+    : '👑 Max Level tercapai!';
+  setTimeout(function(){ document.getElementById('g-xp-bar').style.width=pct+'%'; },400);
+  var dist = wkData.distribusi||{};
+  G_ACH[0].earned = streak>=7;
+  G_ACH[1].earned = (dist['Workout / Olahraga']||0)>=3;
+  G_ACH[2].earned = (dist['Belajar']||0)>=10;
+  G_ACH[3].earned = (dist['Hiburan / Healing']||0)>=5;
+  G_ACH[6].earned = totalXP>=800;
+  G_ACH[7].earned = L.lv>=5;
+  gRenderAch();
+  gRenderDays(dist);
+}
+
+function gRenderDays(dist){
+  var days=['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
+  var today=new Date().getDay();
+  var todayIdx=today===0?6:today-1;
+  var html='';
+  days.forEach(function(d,i){
+    var isToday=i===todayIdx;
+    var done=i<todayIdx;
+    var cls='day-dot'+(done?' done':'')+(isToday?' today':'');
+    html+='<div class="day-item"><div class="day-name">'+d+'</div><div class="'+cls+'">'+(done?'✓':isToday?'📍':'·')+'</div></div>';
+  });
+  document.getElementById('g-days-grid').innerHTML=html;
+}
+
+function gRenderAch(){
+  var html='';
+  G_ACH.forEach(function(a){
+    var cls='ach-item '+(a.earned?'earned':'locked');
+    html+='<div class="'+cls+'" title="'+(a.earned?'Earned!':'Belum terbuka')+'">'+
+      '<div class="ach-icon">'+a.icon+'</div>'+
+      '<div class="ach-name">'+a.name+'</div>'+
+    '</div>';
+  });
+  document.getElementById('g-ach-grid').innerHTML=html;
+}
+
+function toggleMission(el){
+  el.classList.toggle('done-m');
+  var chk=el.querySelector('.mi-check');
+  if(el.classList.contains('done-m')){ chk.textContent='✓'; gSpawnXP(el,parseInt(el.getAttribute('data-xp'))); }
+  else { chk.textContent=''; }
+}
+
+function gSpawnXP(el,val){
+  var d=document.createElement('div');
+  d.textContent='+'+val+' XP';
+  d.style.cssText='position:fixed;font-size:13px;font-weight:800;color:#7e3af2;pointer-events:none;z-index:9999;font-family:Space Mono,monospace;transition:all 1s ease;opacity:1';
+  var r=el.getBoundingClientRect();
+  d.style.left=(r.right-30)+'px'; d.style.top=r.top+'px';
+  document.body.appendChild(d);
+  setTimeout(function(){ d.style.transform='translateY(-40px)'; d.style.opacity='0'; },50);
+  setTimeout(function(){ d.remove(); },1100);
+}
+
+function gNextMotiv(){
+  gMIdx=(gMIdx+1)%G_MOTIVS.length;
+  var m=G_MOTIVS[gMIdx];
+  var b=document.getElementById('g-motiv-banner');
+  b.style.opacity='0';
+  setTimeout(function(){
+    b.style.background=m.bg; b.style.borderColor=m.bc;
+    document.getElementById('g-mb-ico').textContent=m.ico;
+    var t=document.getElementById('g-mb-txt'); t.textContent=m.txt; t.style.color=m.tc;
+    var s=document.getElementById('g-mb-sub'); s.textContent=m.sub; s.style.color=m.sc;
+    b.style.opacity='1';
+  },180);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ARSIP DATA & STATE
+// ══════════════════════════════════════════════════════════════
+var ARSIP_ALL      = [];
+var ARSIP_FILTERED = [];
+var ARSIP_PAGE     = 1;
+var ARSIP_ACTIVE_MK = null;
+var ARSIP_SORT_COL = 'tanggal';
+var ARSIP_SORT_DIR = 'desc';
+
+var AMK_COLORS = [
+  {bg:'rgba(26,86,219,.1)',  border:'rgba(26,86,219,.3)',  text:'#1a56db'},
+  {bg:'rgba(126,58,242,.1)', border:'rgba(126,58,242,.3)', text:'#7e3af2'},
+  {bg:'rgba(217,119,6,.1)',  border:'rgba(217,119,6,.3)',  text:'#d97706'},
+  {bg:'rgba(6,148,162,.1)',  border:'rgba(6,148,162,.3)',  text:'#0694a2'},
+  {bg:'rgba(224,36,36,.1)',  border:'rgba(224,36,36,.3)',  text:'#e02424'},
+  {bg:'rgba(5,122,85,.1)',   border:'rgba(5,122,85,.3)',   text:'#057a55'},
+  {bg:'rgba(244,114,182,.1)',border:'rgba(244,114,182,.3)',text:'#ec4899'},
+  {bg:'rgba(234,179,8,.1)',  border:'rgba(234,179,8,.3)',  text:'#ca8a04'},
+];
+var AMK_COLOR_MAP = {};
+var AMK_COLOR_IDX = 0;
+
+function getAMKColor(mk){
+  if(!AMK_COLOR_MAP[mk]){ AMK_COLOR_MAP[mk]=AMK_COLORS[AMK_COLOR_IDX%AMK_COLORS.length]; AMK_COLOR_IDX++; }
+  return AMK_COLOR_MAP[mk];
+}
+
+function loadArsip(){
+  var btn=document.getElementById('arsip-refresh-btn');
+  var ri=document.getElementById('arsip-ri');
+  btn.disabled=true; ri.classList.add('spin');
+  document.getElementById('arsip-chip').textContent='Memuat...';
+  document.getElementById('arsip-chip').className='chip';
+
+  google.script.run
+    .withSuccessHandler(function(data){
+      btn.disabled=false; ri.classList.remove('spin');
+      ARSIP_ALL = data.arsip || [];
+      arsipRenderStats(data);
+      arsipRenderMKFilter();
+      arsipApplyFilter();
+      document.getElementById('arsip-chip').textContent='Update: '+(data.lastUpdated||'--');
+      document.getElementById('arsip-chip').className='chip ok';
+    })
+    .withFailureHandler(function(e){
+      btn.disabled=false; ri.classList.remove('spin');
+      document.getElementById('arsip-chip').textContent='Gagal';
+      document.getElementById('arsip-chip').className='chip err';
+      document.getElementById('arsip-tbody').innerHTML=
+        '<tr><td colspan="8"><div style="text-align:center;padding:30px;color:var(--red);font-size:12px">⚠️ Gagal memuat data arsip: '+(e.message||e)+'</div></td></tr>';
+    })
+    .getArsipData();
+}
+
+function arsipRenderStats(data){
+  var arsip = data.arsip || [];
+  var mks={};
+  arsip.forEach(function(r){ mks[r.mk]=(mks[r.mk]||0)+1; });
+  var mkList=Object.entries(mks).sort(function(a,b){return b[1]-a[1];});
+  var sorted=arsip.slice().sort(function(a,b){
+    return (arsipParseDate(b.tanggal)||0)-(arsipParseDate(a.tanggal)||0);
+  });
+  document.getElementById('as-total').textContent = arsip.length;
+  document.getElementById('as-mk').textContent    = mkList.length;
+  document.getElementById('as-cr').textContent    = (data.completionRate||0)+'%';
+  document.getElementById('as-top').textContent   = mkList[0] ? mkList[0][0].split(' ')[0] : '--';
+  document.getElementById('as-last').textContent  = sorted[0] ? sorted[0].tanggal : '--';
+}
+
+function arsipRenderMKFilter(){
+  var mks={};
+  ARSIP_ALL.forEach(function(r){ mks[r.mk]=(mks[r.mk]||0)+1; });
+  var sorted=Object.entries(mks).sort(function(a,b){return b[1]-a[1];});
+  var html='<div class="amk-chip '+(ARSIP_ACTIVE_MK===null?'aactive':'')+'" onclick="arsipFilterMK(null)">'+
+    '<span>Semua MK</span><span class="acnt">'+ARSIP_ALL.length+'</span></div>';
+  sorted.forEach(function(e){
+    var mk=e[0],cnt=e[1],isA=ARSIP_ACTIVE_MK===mk;
+    html+='<div class="amk-chip '+(isA?'aactive':'')+'" onclick="arsipFilterMK(\''+mk.replace(/'/g,"\\'")+'\')" title="'+mk+'">'+
+      '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px">'+mk+'</span>'+
+      '<span class="acnt">'+cnt+'</span></div>';
+  });
+  document.getElementById('arsip-mk-list').innerHTML=html;
+}
+
+function arsipFilterMK(mk){
+  ARSIP_ACTIVE_MK=mk; ARSIP_PAGE=1;
+  arsipRenderMKFilter();
+  arsipApplyFilter();
+}
+
+function arsipApplyFilter(){
+  var q     = (document.getElementById('arsip-search').value||'').toLowerCase().trim();
+  var sortV = document.getElementById('arsip-sort').value;
+  var perPage = parseInt(document.getElementById('arsip-perpage').value);
+  var sp = sortV.split('_');
+  ARSIP_SORT_COL=sp[0]; ARSIP_SORT_DIR=sp[1]||'asc';
+  arsipUpdateSortIcons();
+
+  ARSIP_FILTERED = ARSIP_ALL.filter(function(r){
+    var matchMK = !ARSIP_ACTIVE_MK || r.mk===ARSIP_ACTIVE_MK;
+    var matchQ  = !q || r.mk.toLowerCase().includes(q) || r.tugas.toLowerCase().includes(q) || (r.tanggal||'').includes(q);
+    return matchMK && matchQ;
+  });
+
+  ARSIP_FILTERED.sort(function(a,b){
+    var va,vb,dir=ARSIP_SORT_DIR==='desc'?-1:1;
+    if(ARSIP_SORT_COL==='tanggal')      { va=arsipParseDate(a.tanggal)||0; vb=arsipParseDate(b.tanggal)||0; return (va-vb)*dir; }
+    else if(ARSIP_SORT_COL==='deadline'){ va=arsipParseDate(a.deadline)||0; vb=arsipParseDate(b.deadline)||0; return (va-vb)*dir; }
+    else if(ARSIP_SORT_COL==='mk')      { return a.mk.localeCompare(b.mk)*dir; }
+    else if(ARSIP_SORT_COL==='tugas')   { return a.tugas.localeCompare(b.tugas)*dir; }
+    return 0;
+  });
+
+  document.getElementById('arsip-record-count').textContent = ARSIP_FILTERED.length+' entri';
+  arsipRenderTable(ARSIP_FILTERED, perPage);
+}
+
+function arsipSortBy(col){
+  if(ARSIP_SORT_COL===col) ARSIP_SORT_DIR=ARSIP_SORT_DIR==='asc'?'desc':'asc';
+  else { ARSIP_SORT_COL=col; ARSIP_SORT_DIR='asc'; }
+  document.getElementById('arsip-sort').value=col+'_'+ARSIP_SORT_DIR;
+  arsipApplyFilter();
+}
+
+function arsipUpdateSortIcons(){
+  ['tanggal','mk','tugas','deadline'].forEach(function(c){
+    var el=document.getElementById('asort-'+c);
+    if(!el) return;
+    if(c===ARSIP_SORT_COL) el.textContent=ARSIP_SORT_DIR==='asc'?'▲':'▼';
+    else el.textContent='⬍';
+    el.closest('th').classList.toggle('asorted',c===ARSIP_SORT_COL);
+  });
+}
+
+function arsipRenderTable(data, perPage){
+  var totalPages=Math.max(1,Math.ceil(data.length/perPage));
+  ARSIP_PAGE=Math.min(ARSIP_PAGE,totalPages);
+  var start=(ARSIP_PAGE-1)*perPage;
+  var pageData=data.slice(start,start+perPage);
+
+  document.getElementById('arsip-page-info').textContent=
+    'Menampilkan '+(data.length?start+1:0)+'–'+Math.min(start+perPage,data.length)+' dari '+data.length+' entri';
+
+  if(!pageData.length){
+    document.getElementById('arsip-tbody').innerHTML=
+      '<tr><td colspan="8">'+
+        '<div class="arsip-empty">'+
+          '<div class="ei">🗃️</div>'+
+          '<div class="et">Tidak ada data arsip</div>'+
+          '<div class="es">Belum ada tugas dengan status SELESAI yang ditemukan</div>'+
+        '</div>'+
+      '</td></tr>';
+    arsipRenderPagination(0,perPage);
+    return;
+  }
+
+  var today=new Date(); today.setHours(0,0,0,0);
+  var rows=pageData.map(function(r,i){
+    var c=getAMKColor(r.mk);
+    var rowNum=start+i+1;
+    var mkBadge='<span class="amk-badge" style="background:'+c.bg+';border:1px solid '+c.border+';color:'+c.text+'">'+r.mk+'</span>';
+    var dlPill='-';
+    if(r.deadline&&r.deadline!=='-'){
+      var dl=arsipParseDate(r.deadline);
+      var diff=dl?Math.ceil((dl-today)/86400000):null;
+      var cls2=(diff!==null&&diff>=0)?'near':'past';
+      dlPill='<span class="adl-pill '+cls2+'">📅 '+r.deadline+'</span>';
+    }
+    var waktu=r.waktu&&r.waktu!=='-'
+      ? '<span style="font-family:\'Space Mono\',monospace;font-size:10.5px;color:var(--g500)">'+r.waktu+'</span>'
+      : '<span style="color:var(--g300)">—</span>';
+    return '<tr>'+
+      '<td class="no-c">'+rowNum+'</td>'+
+      '<td class="date-c">'+r.tanggal+'</td>'+
+      '<td>'+mkBadge+'</td>'+
+      '<td><div class="atugas-c">'+r.tugas+(r.ruang&&r.ruang!=='-'?'<div class="asub">📍 '+r.ruang+'</div>':'')+'</div></td>'+
+      '<td>'+dlPill+'</td>'+
+      '<td>'+waktu+'</td>'+
+      '<td><span class="astatus-badge"><span class="astatus-dot"></span>Selesai</span></td>'+
+      '<td><span class="arow-ref">'+(r.refBaris||'—')+'</span></td>'+
+    '</tr>';
+  }).join('');
+
+  document.getElementById('arsip-tbody').innerHTML=rows;
+  arsipRenderPagination(data.length,perPage);
+}
+
+function arsipRenderPagination(total,perPage){
+  var totalPages=Math.max(1,Math.ceil(total/perPage));
+  var html='<button class="apage-btn" onclick="arsipGoPage('+(ARSIP_PAGE-1)+')" '+(ARSIP_PAGE<=1?'disabled':'')+'>‹</button>';
+  var s=Math.max(1,ARSIP_PAGE-2), e=Math.min(totalPages,s+4);
+  if(s>1){ html+='<button class="apage-btn" onclick="arsipGoPage(1)">1</button>'; if(s>2) html+='<span style="color:var(--g400);font-size:12px;padding:0 3px">…</span>'; }
+  for(var p=s;p<=e;p++) html+='<button class="apage-btn '+(p===ARSIP_PAGE?'aactive':'')+'" onclick="arsipGoPage('+p+')">'+p+'</button>';
+  if(e<totalPages){ if(e<totalPages-1) html+='<span style="color:var(--g400);font-size:12px;padding:0 3px">…</span>'; html+='<button class="apage-btn" onclick="arsipGoPage('+totalPages+')">'+totalPages+'</button>'; }
+  html+='<button class="apage-btn" onclick="arsipGoPage('+(ARSIP_PAGE+1)+')" '+(ARSIP_PAGE>=totalPages?'disabled':'')+'>›</button>';
+  document.getElementById('arsip-page-btns').innerHTML=html;
+}
+
+function arsipGoPage(p){
+  var perPage=parseInt(document.getElementById('arsip-perpage').value);
+  var totalPages=Math.max(1,Math.ceil(ARSIP_FILTERED.length/perPage));
+  ARSIP_PAGE=Math.max(1,Math.min(p,totalPages));
+  arsipRenderTable(ARSIP_FILTERED,perPage);
+}
+
+function arsipParseDate(str){
+  if(!str||str==='-'||str==='') return null;
+  var p=String(str).split('/');
+  if(p.length!==3) return null;
+  var d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
+  d.setHours(0,0,0,0);
+  return isNaN(d.getTime())?null:d;
+}
+
+function exportArsipCSV(){
+  var rows=[['No','Tanggal','Mata Kuliah','Tugas','Ruang','Waktu','Deadline','Status','Ref Baris']];
+  ARSIP_FILTERED.forEach(function(r,i){
+    rows.push([i+1,r.tanggal,r.mk,r.tugas,r.ruang||'-',r.waktu||'-',r.deadline||'-','SELESAI',r.refBaris||'-']);
+  });
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+(c||'').toString().replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a'); a.href=url; a.download='Arsip_Tugas_Selesai.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ══════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════
+window.onload = function() {
+  loadData();
+  setTimeout(loadNotifConfig, 800);
+};
+
+// Auto-refresh setiap 5 menit
+setInterval(loadData, 5 * 60 * 1000);
+</script>
+</body>
+</html>
