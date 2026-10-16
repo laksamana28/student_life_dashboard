@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arsip Tugas Selesai</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ── ROOT & RESET ─────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0f1117;
+  --surface:#181c27;
+  --surface2:#1e2333;
+  --border:#2a3045;
+  --border2:#353d55;
+  --accent:#4ade80;
+  --accent2:#22d3ee;
+  --accent3:#f59e0b;
+  --accent-glow:rgba(74,222,128,.18);
+  --text:#e8ecf4;
+  --text2:#8b95af;
+  --text3:#5a6480;
+  --red:#f87171;
+  --orange:#fb923c;
+  --blue:#60a5fa;
+  --purple:#a78bfa;
+  --green:#4ade80;
+  --r:12px;--rsm:8px;--rxs:5px;
+}
+body{
+  font-family:'Sora',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  padding:20px;
+  font-size:13px;
+}
+
+/* ── BACKGROUND GRID ──────────────────────────────── */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(74,222,128,.03) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(74,222,128,.03) 1px,transparent 1px);
+  background-size:32px 32px;
+  pointer-events:none;z-index:0;
+}
+
+/* ── TOPBAR ───────────────────────────────────────── */
+.topbar{
+  position:relative;z-index:1;
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:14px 22px;
+  margin-bottom:18px;
+  box-shadow:0 0 0 1px rgba(74,222,128,.04),0 4px 24px rgba(0,0,0,.4);
+}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-icon{
+  width:36px;height:36px;border-radius:10px;
+  background:linear-gradient(135deg,#166534,var(--accent));
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;box-shadow:0 0 16px rgba(74,222,128,.3);
+}
+.topbar-title{font-size:17px;font-weight:800;letter-spacing:-.4px;color:var(--text)}
+.topbar-title span{color:var(--accent)}
+.topbar-right{display:flex;align-items:center;gap:10px}
+
+/* CHIP */
+.chip{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;padding:4px 10px;border-radius:20px;
+  border:1px solid var(--border2);
+  color:var(--text3);background:var(--surface2);
+}
+.chip.ok{border-color:var(--accent);color:var(--accent);background:rgba(74,222,128,.08)}
+.chip.err{border-color:var(--red);color:var(--red);background:rgba(248,113,113,.08)}
+
+/* BTN */
+.btn{
+  border:none;border-radius:20px;
+  padding:7px 16px;font-size:11.5px;font-weight:700;
+  cursor:pointer;font-family:'Sora',sans-serif;
+  display:flex;align-items:center;gap:6px;
+  transition:.2s;
+}
+.btn-green{background:var(--accent);color:#0f1117}
+.btn-green:hover{background:#22c55e;transform:translateY(-1px);box-shadow:0 4px 16px rgba(74,222,128,.3)}
+.btn-green.loading{opacity:.55;pointer-events:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{animation:spin .7s linear infinite;display:inline-block}
+
+/* ── STATS ROW ────────────────────────────────────── */
+.stats-row{
+  position:relative;z-index:1;
+  display:grid;grid-template-columns:repeat(5,1fr);
+  gap:12px;margin-bottom:18px;
+}
+.stat-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:14px 16px;
+  display:flex;flex-direction:column;gap:6px;
+  transition:border-color .25s;
+}
+.stat-card:hover{border-color:var(--border2)}
+.stat-card.hi{
+  border-color:rgba(74,222,128,.3);
+  background:linear-gradient(135deg,rgba(74,222,128,.06),var(--surface));
+  box-shadow:0 0 24px rgba(74,222,128,.08);
+}
+.stat-ico{font-size:18px;line-height:1}
+.stat-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--text3)}
+.stat-val{
+  font-size:26px;font-weight:800;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:-1.5px;line-height:1;
+  color:var(--text);
+}
+.stat-val.green{color:var(--accent)}
+.stat-val.blue{color:var(--blue)}
+.stat-val.orange{color:var(--orange)}
+.stat-val.purple{color:var(--purple)}
+.stat-sub{font-size:9px;color:var(--text3);margin-top:1px}
+
+/* ── MAIN CONTAINER ───────────────────────────────── */
+.main{position:relative;z-index:1;display:grid;grid-template-columns:280px 1fr;gap:14px}
+
+/* ── SIDEBAR / FILTER ─────────────────────────────── */
+.sidebar{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:16px;
+  height:fit-content;
+  position:sticky;top:20px;
+}
+.s-title{
+  font-size:10px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.8px;color:var(--accent);margin-bottom:10px;
+}
+.filter-input{
+  width:100%;padding:8px 12px;
+  background:var(--surface2);
+  border:1px solid var(--border2);
+  border-radius:var(--rsm);
+  color:var(--text);font-size:12px;
+  font-family:'Sora',sans-serif;
+  outline:none;margin-bottom:10px;
+  transition:border-color .2s;
+}
+.filter-input:focus{border-color:var(--accent)}
+.filter-input::placeholder{color:var(--text3)}
+
+.filter-select{
+  width:100%;padding:8px 12px;
+  background:var(--surface2);
+  border:1px solid var(--border2);
+  border-radius:var(--rsm);
+  color:var(--text);font-size:12px;
+  font-family:'Sora',sans-serif;
+  outline:none;cursor:pointer;
+  margin-bottom:10px;
+  transition:border-color .2s;
+}
+.filter-select:focus{border-color:var(--accent)}
+
+.divider{height:1px;background:var(--border);margin:12px 0}
+
+/* MK Filter Chips */
+.mk-filter-list{display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto}
+.mk-filter-list::-webkit-scrollbar{width:3px}
+.mk-filter-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px}
+.mk-chip{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 10px;border-radius:var(--rxs);
+  background:var(--surface2);border:1px solid var(--border);
+  cursor:pointer;transition:all .2s;font-size:11px;
+  color:var(--text2);
+}
+.mk-chip:hover,.mk-chip.active{
+  border-color:var(--accent);color:var(--accent);
+  background:rgba(74,222,128,.08);
+}
+.mk-chip .cnt{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;background:var(--border2);
+  padding:1px 6px;border-radius:10px;color:var(--text3);
+}
+.mk-chip.active .cnt{background:rgba(74,222,128,.2);color:var(--accent)}
+
+/* Timeline sidebar */
+.timeline-mini{display:flex;flex-direction:column;gap:6px;margin-top:2px}
+.tm-item{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:11px;color:var(--text2);
+  padding:5px 0;border-bottom:1px solid var(--border);
+}
+.tm-item:last-child{border-bottom:none}
+.tm-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--accent);flex-shrink:0;margin-top:3px;
+  box-shadow:0 0 6px var(--accent);
+}
+.tm-mk{font-weight:700;color:var(--text);font-size:10.5px;line-height:1.2}
+.tm-sub{color:var(--text3);font-size:10px;margin-top:1px}
+
+/* ── ARSIP TABLE AREA ─────────────────────────────── */
+.arsip-panel{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  overflow:hidden;
+}
+.panel-head{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 18px;
+  border-bottom:1px solid var(--border);
+  background:var(--surface2);
+}
+.panel-head-left{display:flex;align-items:center;gap:10px}
+.ph-icon{
+  width:30px;height:30px;border-radius:8px;
+  background:linear-gradient(135deg,#166534,var(--accent));
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;
+}
+.ph-title{font-size:13px;font-weight:800;color:var(--text);letter-spacing:-.2px}
+.ph-sub{font-size:10.5px;color:var(--text3);margin-top:1px}
+.record-count{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;color:var(--accent);
+  background:rgba(74,222,128,.1);
+  border:1px solid rgba(74,222,128,.25);
+  padding:4px 10px;border-radius:20px;
+}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table.arsip{
+  width:100%;border-collapse:collapse;
+}
+table.arsip thead tr{
+  background:var(--surface2);
+}
+table.arsip th{
+  padding:10px 14px;
+  text-align:left;
+  font-size:9.5px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:.7px;
+  color:var(--text3);
+  border-bottom:1px solid var(--border);
+  white-space:nowrap;
+  cursor:pointer;
+  user-select:none;
+  transition:color .2s;
+}
+table.arsip th:hover{color:var(--accent)}
+table.arsip th .sort-ico{margin-left:4px;opacity:.4;font-size:10px}
+table.arsip th.sorted{color:var(--accent)}
+table.arsip th.sorted .sort-ico{opacity:1}
+
+table.arsip tbody tr{
+  border-bottom:1px solid var(--border);
+  transition:background .18s;
+}
+table.arsip tbody tr:last-child{border-bottom:none}
+table.arsip tbody tr:hover{background:rgba(74,222,128,.04)}
+
+table.arsip td{
+  padding:11px 14px;
+  vertical-align:middle;
+  font-size:12px;color:var(--text2);
+}
+
+/* nomor */
+.no-cell{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10.5px;color:var(--text3);
+  width:40px;text-align:center;
+}
+
+/* tanggal */
+.date-cell{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;color:var(--text2);white-space:nowrap;
+}
+
+/* mata kuliah badge */
+.mk-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 9px;border-radius:20px;
+  font-size:10.5px;font-weight:700;
+  white-space:nowrap;
+}
+
+/* tugas name */
+.tugas-cell{
+  font-weight:600;color:var(--text);
+  font-size:12px;max-width:220px;
+  line-height:1.35;
+}
+.tugas-cell .sub{font-size:10px;color:var(--text3);font-weight:400;margin-top:2px}
+
+/* deadline */
+.dl-cell{white-space:nowrap}
+.dl-pill{
+  display:inline-flex;align-items:center;gap:4px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10.5px;padding:3px 8px;border-radius:20px;
+}
+.dl-pill.past{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2);color:var(--accent)}
+.dl-pill.near{background:rgba(251,146,60,.1);border:1px solid rgba(251,146,60,.2);color:var(--orange)}
+
+/* status badge */
+.status-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:20px;
+  font-size:10px;font-weight:700;letter-spacing:.3px;
+  white-space:nowrap;
+}
+.status-badge.selesai{
+  background:rgba(74,222,128,.12);
+  border:1px solid rgba(74,222,128,.3);
+  color:var(--accent);
+}
+.status-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:currentColor;
+  box-shadow:0 0 6px currentColor;
+}
+
+/* waktu */
+.waktu-cell{
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;color:var(--text3);white-space:nowrap;
+}
+
+/* row index (162A...) */
+.row-ref{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;color:var(--text3);
+  background:var(--surface2);border:1px solid var(--border);
+  padding:2px 7px;border-radius:4px;
+  white-space:nowrap;
+}
+
+/* ── EMPTY STATE ──────────────────────────────────── */
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:60px 20px;gap:10px;
+}
+.empty-ico{font-size:40px;opacity:.4}
+.empty-txt{font-size:14px;font-weight:700;color:var(--text2)}
+.empty-sub{font-size:12px;color:var(--text3)}
+
+/* ── SKELETON ─────────────────────────────────────── */
+@keyframes shimmer{
+  0%{background-position:-400px 0}100%{background-position:400px 0}
+}
+.skel{
+  background:linear-gradient(90deg,var(--surface2) 25%,var(--border) 50%,var(--surface2) 75%);
+  background-size:800px 100%;
+  animation:shimmer 1.4s ease-in-out infinite;
+  border-radius:4px;
+}
+.skel-row td{padding:12px 14px}
+
+/* ── PAGINATION ───────────────────────────────────── */
+.pagination{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 18px;border-top:1px solid var(--border);
+  background:var(--surface2);
+}
+.page-info{font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace}
+.page-btns{display:flex;gap:5px}
+.page-btn{
+  width:30px;height:30px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text2);font-size:12px;cursor:pointer;
+  transition:all .2s;
+}
+.page-btn:hover{border-color:var(--accent);color:var(--accent)}
+.page-btn.active{background:var(--accent);color:#0f1117;border-color:var(--accent);font-weight:700}
+.page-btn:disabled{opacity:.3;cursor:not-allowed}
+
+/* ── EXPORT BTN ───────────────────────────────────── */
+.btn-ghost{
+  background:transparent;
+  border:1px solid var(--border2);
+  border-radius:20px;
+  padding:6px 14px;font-size:11px;
+  font-weight:700;cursor:pointer;
+  font-family:'Sora',sans-serif;
+  display:flex;align-items:center;gap:5px;
+  color:var(--text2);transition:all .2s;
+}
+.btn-ghost:hover{border-color:var(--accent2);color:var(--accent2)}
+
+/* ── MK COLOR MAP ─────────────────────────────────── */
+/* Warna badge per MK di-assign via JS */
+
+/* ── PROGRESS BAR ─────────────────────────────────── */
+#pbar{
+  position:fixed;top:0;left:0;height:2px;width:0%;
+  z-index:9999;background:linear-gradient(90deg,#166534,var(--accent),var(--accent2));
+  transition:width .3s;border-radius:0 2px 2px 0;
+}
+
+/* ── RESPONSIVE ───────────────────────────────────── */
+@media(max-width:900px){
+  .main{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:repeat(3,1fr)}
+  .sidebar{position:static}
+}
+@media(max-width:600px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  body{padding:10px}
+}
+
+/* ── FADE IN ──────────────────────────────────────── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.arsip-panel,.sidebar,.stats-row{animation:fadeUp .4s ease both}
+.sidebar{animation-delay:.05s}.stats-row{animation-delay:.02s}.arsip-panel{animation-delay:.08s}
+</style>
+</head>
+<body>
+
+<div id="pbar"></div>
+
+<!-- ── TOPBAR ──────────────────────────────────────── -->
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="topbar-icon">🗄️</div>
+    <div>
+      <div class="topbar-title">Arsip <span>Tugas Selesai</span></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:1px">Riwayat semua tugas yang telah diselesaikan</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="chip" id="updateChip">Memuat...</span>
+    <button class="btn-ghost" onclick="exportCSV()">⬇ Export CSV</button>
+    <button class="btn btn-green" id="refreshBtn" onclick="refresh()">
+      <span id="ri">↻</span> Refresh
+    </button>
+  </div>
+</div>
+
+<!-- ── STATS ───────────────────────────────────────── -->
+<div class="stats-row">
+  <div class="stat-card hi">
+    <div class="stat-ico">✅</div>
+    <div class="stat-lbl">Total Selesai</div>
+    <div class="stat-val green" id="s-total">--</div>
+    <div class="stat-sub">tugas diarsipkan</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-ico">📚</div>
+    <div class="stat-lbl">Mata Kuliah</div>
+    <div class="stat-val blue" id="s-mk">--</div>
+    <div class="stat-sub">mata kuliah</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-ico">📅</div>
+    <div class="stat-lbl">Terakhir Selesai</div>
+    <div class="stat-val orange" style="font-size:15px;letter-spacing:0" id="s-last">--</div>
+    <div class="stat-sub">tanggal terakhir</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-ico">⚡</div>
+    <div class="stat-lbl">Completion Rate</div>
+    <div class="stat-val purple" id="s-cr">--%</div>
+    <div class="stat-sub">dari total tugas</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-ico">🏆</div>
+    <div class="stat-lbl">MK Terbanyak</div>
+    <div class="stat-val" style="font-size:14px;letter-spacing:0;color:var(--accent2)" id="s-top">--</div>
+    <div class="stat-sub">tugas selesai</div>
+  </div>
+</div>
+
+<!-- ── MAIN ─────────────────────────────────────────── -->
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="s-title">🔍 Filter & Cari</div>
+    <input class="filter-input" id="searchInput" placeholder="Cari tugas / mata kuliah..." oninput="applyFilter()">
+    <select class="filter-select" id="sortSelect" onchange="applyFilter()">
+      <option value="tanggal_desc">Terbaru dulu</option>
+      <option value="tanggal_asc">Terlama dulu</option>
+      <option value="mk_asc">MK (A–Z)</option>
+      <option value="tugas_asc">Tugas (A–Z)</option>
+      <option value="deadline_asc">Deadline terdekat</option>
+    </select>
+    <select class="filter-select" id="perPageSelect" onchange="applyFilter()">
+      <option value="15">15 per halaman</option>
+      <option value="25" selected>25 per halaman</option>
+      <option value="50">50 per halaman</option>
+      <option value="999">Tampilkan semua</option>
+    </select>
+
+    <div class="divider"></div>
+    <div class="s-title">📂 Filter Mata Kuliah</div>
+    <div class="mk-filter-list" id="mkFilterList">
+      <div class="skel" style="height:28px;width:100%"></div>
+      <div class="skel" style="height:28px;width:85%"></div>
+      <div class="skel" style="height:28px;width:90%"></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="s-title">🕐 5 Terbaru Selesai</div>
+    <div class="timeline-mini" id="timelineMini">
+      <div class="skel" style="height:40px;width:100%"></div>
+    </div>
+  </div>
+
+  <!-- ARSIP PANEL -->
+  <div class="arsip-panel">
+    <div class="panel-head">
+      <div class="panel-head-left">
+        <div class="ph-icon">🗄️</div>
+        <div>
+          <div class="ph-title">Arsip Tugas Selesai</div>
+          <div class="ph-sub">Mulai dari baris 162A (kolom SELESAI = "SELESAI")</div>
+        </div>
+      </div>
+      <div class="record-count" id="recordCount">-- entri</div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="arsip">
+        <thead>
+          <tr>
+            <th class="no-cell">#</th>
+            <th onclick="sortBy('tanggal')">Tanggal <span class="sort-ico" id="sort-tanggal">▼</span></th>
+            <th onclick="sortBy('mk')">Mata Kuliah <span class="sort-ico" id="sort-mk">⬍</span></th>
+            <th onclick="sortBy('tugas')">Tugas <span class="sort-ico" id="sort-tugas">⬍</span></th>
+            <th onclick="sortBy('deadline')">Deadline <span class="sort-ico" id="sort-deadline">⬍</span></th>
+            <th>Waktu</th>
+            <th>Status</th>
+            <th>Ref. Baris</th>
+          </tr>
+        </thead>
+        <tbody id="arsipBody">
+          <!-- skeleton rows -->
+          <tr class="skel-row"><td colspan="8"><div class="skel" style="height:14px;width:95%"></div></td></tr>
+          <tr class="skel-row"><td colspan="8"><div class="skel" style="height:14px;width:80%"></div></td></tr>
+          <tr class="skel-row"><td colspan="8"><div class="skel" style="height:14px;width:88%"></div></td></tr>
+          <tr class="skel-row"><td colspan="8"><div class="skel" style="height:14px;width:75%"></div></td></tr>
+          <tr class="skel-row"><td colspan="8"><div class="skel" style="height:14px;width:92%"></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <div class="page-info" id="pageInfo">-- dari -- entri</div>
+      <div class="page-btns" id="pageBtns"></div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  DATA & STATE
+// ═══════════════════════════════════════════════════════════
+var ALL_DATA    = [];   // semua data arsip (sudah selesai)
+var FILTERED    = [];   // setelah filter
+var CURRENT_PAGE = 1;
+var ACTIVE_MK   = null; // filter MK aktif
+var SORT_COL    = 'tanggal';
+var SORT_DIR    = 'desc';
+
+// Palet warna per MK (assign otomatis)
+var MK_COLORS = [
+  {bg:'rgba(96,165,250,.12)', border:'rgba(96,165,250,.3)', text:'#60a5fa'},
+  {bg:'rgba(167,139,250,.12)',border:'rgba(167,139,250,.3)',text:'#a78bfa'},
+  {bg:'rgba(251,146,60,.12)', border:'rgba(251,146,60,.3)', text:'#fb923c'},
+  {bg:'rgba(34,211,238,.12)', border:'rgba(34,211,238,.3)', text:'#22d3ee'},
+  {bg:'rgba(248,113,113,.12)',border:'rgba(248,113,113,.3)',text:'#f87171'},
+  {bg:'rgba(163,230,53,.12)', border:'rgba(163,230,53,.3)', text:'#a3e635'},
+  {bg:'rgba(244,114,182,.12)',border:'rgba(244,114,182,.3)',text:'#f472b6'},
+  {bg:'rgba(52,211,153,.12)', border:'rgba(52,211,153,.3)', text:'#34d399'},
+];
+var MK_COLOR_MAP = {};
+var MK_COLOR_IDX = 0;
+
+function getMKColor(mk){
+  if(!MK_COLOR_MAP[mk]){
+    MK_COLOR_MAP[mk] = MK_COLORS[MK_COLOR_IDX % MK_COLORS.length];
+    MK_COLOR_IDX++;
+  }
+  return MK_COLOR_MAP[mk];
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PROGRESS BAR
+// ═══════════════════════════════════════════════════════════
+var pbarInterval;
+function startPbar(){
+  var b=document.getElementById('pbar'); var p=0;
+  b.style.width='0%';b.style.opacity='1';
+  clearInterval(pbarInterval);
+  pbarInterval=setInterval(function(){
+    p+=(88-p)*.09; b.style.width=Math.min(p,86)+'%';
+  },80);
+}
+function donePbar(){
+  clearInterval(pbarInterval);
+  var b=document.getElementById('pbar');
+  b.style.width='100%';
+  setTimeout(function(){b.style.opacity='0';},400);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LOAD DATA (via google.script.run)
+// ═══════════════════════════════════════════════════════════
+function loadData(){
+  setLoading(true); startPbar();
+  google.script.run
+    .withSuccessHandler(onData)
+    .withFailureHandler(onError)
+    .getArsipData();
+}
+
+function onData(data){
+  donePbar(); setLoading(false);
+  ALL_DATA = data.arsip || [];
+  renderStats(data);
+  renderMKFilter();
+  renderTimeline();
+  applyFilter();
+  var chip=document.getElementById('updateChip');
+  chip.textContent='Update: '+(data.lastUpdated||'--');
+  chip.className='chip ok';
+}
+
+function onError(e){
+  donePbar(); setLoading(false);
+  var chip=document.getElementById('updateChip');
+  chip.textContent='Gagal'; chip.className='chip err';
+  document.getElementById('arsipBody').innerHTML=
+    '<tr><td colspan="8"><div style="text-align:center;padding:30px;color:#f87171;font-size:12px">⚠️ Gagal memuat data: '+(e.message||e)+'</div></td></tr>';
+}
+
+function refresh(){ loadData(); }
+
+function setLoading(v){
+  var btn=document.getElementById('refreshBtn');
+  var ri=document.getElementById('ri');
+  if(v){btn.classList.add('loading');ri.classList.add('spin');}
+  else{btn.classList.remove('loading');ri.classList.remove('spin');}
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER STATS
+// ═══════════════════════════════════════════════════════════
+function renderStats(data){
+  var arsip = data.arsip || [];
+  var total = arsip.length;
+
+  // unik MK
+  var mks = {};
+  arsip.forEach(function(r){ mks[r.mk]=( mks[r.mk]||0)+1; });
+  var mkList = Object.entries(mks).sort(function(a,b){return b[1]-a[1];});
+
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-mk').textContent    = mkList.length;
+  document.getElementById('s-cr').textContent    = (data.completionRate||0)+'%';
+  document.getElementById('s-top').textContent   = mkList[0] ? mkList[0][0].split(' ')[0] : '--';
+
+  // last selesai (tanggal terbesar)
+  var sorted = arsip.slice().sort(function(a,b){
+    return (parseDate(b.tanggal)||0) - (parseDate(a.tanggal)||0);
+  });
+  document.getElementById('s-last').textContent = sorted[0] ? sorted[0].tanggal : '--';
+}
+
+// ═══════════════════════════════════════════════════════════
+//  MK FILTER SIDEBAR
+// ═══════════════════════════════════════════════════════════
+function renderMKFilter(){
+  var mks = {};
+  ALL_DATA.forEach(function(r){ mks[r.mk]=(mks[r.mk]||0)+1; });
+  var sorted = Object.entries(mks).sort(function(a,b){return b[1]-a[1];});
+
+  var html='<div class="mk-chip '+(ACTIVE_MK===null?'active':'')+'" onclick="filterMK(null)">'+
+    '<span>Semua Mata Kuliah</span><span class="cnt">'+ALL_DATA.length+'</span></div>';
+  sorted.forEach(function(e){
+    var mk=e[0], cnt=e[1];
+    var isActive = ACTIVE_MK===mk;
+    html+='<div class="mk-chip '+(isActive?'active':'')+'" onclick="filterMK(\''+mk.replace(/'/g,"\\'")+'\')" title="'+mk+'">'+
+      '<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">'+mk+'</span>'+
+      '<span class="cnt">'+cnt+'</span></div>';
+  });
+  document.getElementById('mkFilterList').innerHTML=html;
+}
+
+function filterMK(mk){
+  ACTIVE_MK=mk; CURRENT_PAGE=1;
+  renderMKFilter();
+  applyFilter();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TIMELINE MINI (5 terbaru)
+// ═══════════════════════════════════════════════════════════
+function renderTimeline(){
+  var sorted = ALL_DATA.slice().sort(function(a,b){
+    return (parseDate(b.tanggal)||0)-(parseDate(a.tanggal)||0);
+  }).slice(0,5);
+
+  if(!sorted.length){
+    document.getElementById('timelineMini').innerHTML=
+      '<div style="font-size:11px;color:var(--text3)">Belum ada data</div>';
+    return;
+  }
+  document.getElementById('timelineMini').innerHTML=sorted.map(function(r){
+    var c=getMKColor(r.mk);
+    return '<div class="tm-item">'+
+      '<div class="tm-dot" style="background:'+c.text+';box-shadow:0 0 6px '+c.text+'"></div>'+
+      '<div><div class="tm-mk">'+r.mk+'</div>'+
+      '<div class="tm-sub">'+r.tugas.slice(0,30)+(r.tugas.length>30?'…':'')+'</div>'+
+      '<div class="tm-sub" style="font-size:9px;margin-top:1px">'+r.tanggal+'</div></div></div>';
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  FILTER, SORT, PAGINATE
+// ═══════════════════════════════════════════════════════════
+function applyFilter(){
+  var q      = document.getElementById('searchInput').value.toLowerCase().trim();
+  var sortV  = document.getElementById('sortSelect').value;
+  var perPage= parseInt(document.getElementById('perPageSelect').value);
+
+  // parse sort
+  var sortParts = sortV.split('_');
+  SORT_COL = sortParts[0]; SORT_DIR = sortParts[1]||'asc';
+  updateSortIcons();
+
+  // filter
+  FILTERED = ALL_DATA.filter(function(r){
+    var matchMK    = !ACTIVE_MK || r.mk===ACTIVE_MK;
+    var matchSearch= !q || r.mk.toLowerCase().includes(q) || r.tugas.toLowerCase().includes(q) || (r.tanggal||'').includes(q);
+    return matchMK && matchSearch;
+  });
+
+  // sort
+  FILTERED.sort(function(a,b){
+    var va, vb;
+    if(SORT_COL==='tanggal')      { va=parseDate(a.tanggal)||0; vb=parseDate(b.tanggal)||0; }
+    else if(SORT_COL==='deadline'){ va=parseDate(a.deadline)||0; vb=parseDate(b.deadline)||0; }
+    else if(SORT_COL==='mk')      { va=a.mk; vb=b.mk; }
+    else if(SORT_COL==='tugas')   { va=a.tugas; vb=b.tugas; }
+    else                          { va=a.tanggal; vb=b.tanggal; }
+    var dir = SORT_DIR==='desc' ? -1 : 1;
+    if(typeof va==='number') return (va-vb)*dir;
+    return va.localeCompare(vb)*dir;
+  });
+
+  document.getElementById('recordCount').textContent = FILTERED.length+' entri';
+  renderTable(FILTERED, perPage);
+}
+
+function sortBy(col){
+  if(SORT_COL===col) SORT_DIR=SORT_DIR==='asc'?'desc':'asc';
+  else { SORT_COL=col; SORT_DIR='asc'; }
+  var sel=document.getElementById('sortSelect');
+  sel.value=col+'_'+SORT_DIR;
+  applyFilter();
+}
+
+function updateSortIcons(){
+  ['tanggal','mk','tugas','deadline'].forEach(function(c){
+    var el=document.getElementById('sort-'+c);
+    if(!el) return;
+    if(c===SORT_COL) el.textContent=SORT_DIR==='asc'?'▲':'▼';
+    else el.textContent='⬍';
+    el.closest('th').classList.toggle('sorted',c===SORT_COL);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER TABLE
+// ═══════════════════════════════════════════════════════════
+function renderTable(data, perPage){
+  var totalPages = Math.max(1, Math.ceil(data.length/perPage));
+  CURRENT_PAGE   = Math.min(CURRENT_PAGE, totalPages);
+  var start = (CURRENT_PAGE-1)*perPage;
+  var pageData = data.slice(start, start+perPage);
+
+  // page info
+  document.getElementById('pageInfo').textContent =
+    'Menampilkan '+(data.length?start+1:0)+'–'+Math.min(start+perPage,data.length)+' dari '+data.length+' entri';
+
+  // table body
+  if(!pageData.length){
+    document.getElementById('arsipBody').innerHTML=
+      '<tr><td colspan="8">'+
+        '<div class="empty-state">'+
+          '<div class="empty-ico">🗃️</div>'+
+          '<div class="empty-txt">Tidak ada data arsip</div>'+
+          '<div class="empty-sub">Belum ada tugas dengan status SELESAI yang ditemukan</div>'+
+        '</div>'+
+      '</td></tr>';
+    renderPagination(0,perPage);
+    return;
+  }
+
+  var today=new Date(); today.setHours(0,0,0,0);
+  var rows = pageData.map(function(r, i){
+    var c = getMKColor(r.mk);
+    var rowNum = start+i+1;
+    var mkBadge = '<span class="mk-badge" style="background:'+c.bg+';border:1px solid '+c.border+';color:'+c.text+'">'+r.mk+'</span>';
+
+    // deadline pill
+    var dlPill = '-';
+    if(r.deadline && r.deadline!=='-'){
+      var dl=parseDate(r.deadline);
+      var diff = dl ? Math.ceil((dl-today)/86400000) : null;
+      var cls = (diff!==null && diff>=0) ? 'near' : 'past';
+      dlPill='<span class="dl-pill '+cls+'">📅 '+r.deadline+'</span>';
+    }
+
+    // waktu
+    var waktuCell = r.waktu && r.waktu!=='-'
+      ? '<span class="waktu-cell">'+r.waktu+'</span>'
+      : '<span style="color:var(--text3);font-size:11px">—</span>';
+
+    // ref baris
+    var refBaris = r.refBaris || '—';
+
+    return '<tr>'+
+      '<td class="no-cell">'+rowNum+'</td>'+
+      '<td class="date-cell">'+r.tanggal+'</td>'+
+      '<td>'+mkBadge+'</td>'+
+      '<td>'+
+        '<div class="tugas-cell">'+r.tugas+
+          (r.ruang && r.ruang!=='-' ? '<div class="sub">📍 '+r.ruang+'</div>':'')+'</div>'+
+      '</td>'+
+      '<td class="dl-cell">'+dlPill+'</td>'+
+      '<td>'+waktuCell+'</td>'+
+      '<td><span class="status-badge selesai"><span class="status-dot"></span>Selesai</span></td>'+
+      '<td><span class="row-ref">'+refBaris+'</span></td>'+
+    '</tr>';
+  }).join('');
+
+  document.getElementById('arsipBody').innerHTML=rows;
+  renderPagination(data.length, perPage);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PAGINATION
+// ═══════════════════════════════════════════════════════════
+function renderPagination(total, perPage){
+  var totalPages=Math.max(1,Math.ceil(total/perPage));
+  var html='';
+  // prev
+  html+='<button class="page-btn" onclick="goPage('+(CURRENT_PAGE-1)+')" '+(CURRENT_PAGE<=1?'disabled':'')+'>‹</button>';
+  // pages
+  var start=Math.max(1,CURRENT_PAGE-2);
+  var end=Math.min(totalPages,start+4);
+  if(start>1){ html+='<button class="page-btn" onclick="goPage(1)">1</button>'; if(start>2) html+='<span style="color:var(--text3);font-size:12px;padding:0 4px">…</span>'; }
+  for(var p=start;p<=end;p++){
+    html+='<button class="page-btn '+(p===CURRENT_PAGE?'active':'')+'" onclick="goPage('+p+')">'+p+'</button>';
+  }
+  if(end<totalPages){ if(end<totalPages-1) html+='<span style="color:var(--text3);font-size:12px;padding:0 4px">…</span>'; html+='<button class="page-btn" onclick="goPage('+totalPages+')">'+totalPages+'</button>'; }
+  // next
+  html+='<button class="page-btn" onclick="goPage('+(CURRENT_PAGE+1)+')" '+(CURRENT_PAGE>=totalPages?'disabled':'')+'>›</button>';
+  document.getElementById('pageBtns').innerHTML=html;
+}
+
+function goPage(p){
+  var perPage=parseInt(document.getElementById('perPageSelect').value);
+  var totalPages=Math.max(1,Math.ceil(FILTERED.length/perPage));
+  CURRENT_PAGE=Math.max(1,Math.min(p,totalPages));
+  renderTable(FILTERED,perPage);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXPORT CSV
+// ═══════════════════════════════════════════════════════════
+function exportCSV(){
+  var rows=[['No','Tanggal','Mata Kuliah','Tugas','Ruang','Waktu','Deadline','Status','Ref Baris']];
+  FILTERED.forEach(function(r,i){
+    rows.push([i+1,r.tanggal,r.mk,r.tugas,r.ruang||'-',r.waktu||'-',r.deadline||'-','SELESAI',r.refBaris||'-']);
+  });
+  var csv=rows.map(function(r){return r.map(function(c){return '"'+(c||'').toString().replace(/"/g,'""')+'"';}).join(',');}).join('\n');
+  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url; a.download='Arsip_Tugas_Selesai.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  HELPER: parse date dd/MM/yyyy
+// ═══════════════════════════════════════════════════════════
+function parseDate(str){
+  if(!str||str==='-'||str==='') return null;
+  var p=String(str).split('/');
+  if(p.length!==3) return null;
+  var d=new Date(parseInt(p[2]),parseInt(p[1])-1,parseInt(p[0]));
+  d.setHours(0,0,0,0);
+  return isNaN(d.getTime())?null:d;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+window.onload=function(){ loadData(); };
+</script>
+</body>
+</html>
